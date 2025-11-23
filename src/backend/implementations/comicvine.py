@@ -4,6 +4,7 @@ Search for volumes/issues and fetch metadata for them on ComicVine
 
 from asyncio import gather, run, sleep
 from collections.abc import Sequence
+from datetime import date
 from os.path import dirname, join
 from pathlib import Path
 from re import IGNORECASE, compile
@@ -312,17 +313,28 @@ class ComicVine:
         """
         cin = force_range(extract_issue_number(issue_data.number or "0"))[0]
 
+        issue_date: date | None = None
+
+        if self.date_type == DateType.COVER_DATE:
+            issue_date = issue_data.cover_date
+        elif self.date_type == DateType.STORE_DATE:
+            issue_date = issue_data.store_date
+        elif self.date_type == DateType.OLDEST_DATE:
+            dates: list[date] = [
+                idate
+                for idate in [issue_data.cover_date, issue_data.store_date]
+                if idate is not None
+            ]
+            if len(dates) != 0:
+                issue_date = min(dates)
+
         result = IssueMetadata(
             comicvine_id=issue_data.id,
             volume_id=issue_data.volume.id,
             issue_number=(issue_data.number or "0").replace("/", "-").strip(),
             calculated_issue_number=cin if cin is not None else 0.0,
             title=normalise_string(issue_data.name or "") or None,
-            date=(
-                issue_data.cover_date
-                if self.date_type == DateType.COVER_DATE
-                else issue_data.store_date
-            ),
+            date=issue_date,
             description=_clean_description(
                 issue_data.description or "", short=True
             ),

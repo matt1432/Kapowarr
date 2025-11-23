@@ -341,6 +341,7 @@ class DateType(BaseEnum):
 
     COVER_DATE = "cover_date"
     STORE_DATE = "store_date"
+    OLDEST_DATE = "oldest_date"
 
 
 class MatchRejections(BaseEnum):

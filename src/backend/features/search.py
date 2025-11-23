@@ -363,9 +363,9 @@ async def search_multiple_queries(
         for result in response:
             # Don't add if the link is already in the results
             # Avoids duplicates, as multiple formats can return the same result
-            if result['link'] not in processed_links:
+            if result["link"] not in processed_links:
                 search_results.append(result)
-                processed_links.add(result['link'])
+                processed_links.add(result["link"])
 
     return search_results
 

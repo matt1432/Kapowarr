@@ -27,6 +27,7 @@ import type { DateType } from 'Helpers/Props/dateTypes';
 const dateTypeOptions: EnhancedSelectInputValue<DateType>[] = [
     { key: 'cover_date', value: 'Cover Date' },
     { key: 'store_date', value: 'In Store Date' },
+    { key: 'oldest_date', value: 'Oldest Date' },
 ];
 
 export default function MetadataSettings() {
