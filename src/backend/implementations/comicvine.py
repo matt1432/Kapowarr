@@ -556,7 +556,15 @@ class ComicVine:
                     except (ServiceError, AuthenticationError):
                         raise CVRateLimitReached
 
-        return issue_infos
+        unique = []
+        seen = set()
+
+        for item in issue_infos:
+            if item["comicvine_id"] not in seen:
+                seen.add(item["comicvine_id"])
+                unique.append(item)
+
+        return unique
 
     async def search_volumes(self, query: str) -> list[VolumeMetadata]:
         """Search for volumes in CV.
