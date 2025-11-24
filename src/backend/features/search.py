@@ -260,7 +260,7 @@ class SearchLibgenPlus(SearchSource):
             libgen_site_url=Constants.LIBGEN_SITE_URL,
         )
 
-        resulting_libgen_series_ids: list[str] = []
+        resulting_libgen_series_ids: set[str] = set()
 
         for file_result in file_results:
             issue = file_result.issue
@@ -285,7 +285,7 @@ class SearchLibgenPlus(SearchSource):
             if issue is not None:
                 try:
                     if isinstance(issue.series.id, int):
-                        resulting_libgen_series_ids.append(str(issue.series.id))
+                        resulting_libgen_series_ids.add(str(issue.series.id))
                 except Exception:
                     pass
 
