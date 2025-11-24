@@ -431,6 +431,11 @@ def manual_search(
             formats = tuple(f.replace("({year})", "").strip() for f in formats)
 
         search_title = title.replace(":", "")
+        search_titles: list[str] = [search_title]
+
+        if search_title.startswith("The "):
+            search_titles.append(search_title[4:])
+
         search_results: list[SearchResultData] = []
 
         if (
@@ -453,12 +458,13 @@ def manual_search(
                 search_multiple_queries(
                     *(
                         format.format(
-                            title=search_title,
+                            title=stitle,
                             volume_number=volume_data.volume_number,
                             year=volume_data.year,
                             issue_number=issue_number,
                         )
                         for format in formats
+                        for stitle in search_titles
                     ),
                     volume=volume,
                     issue_number=calculated_issue_number,
