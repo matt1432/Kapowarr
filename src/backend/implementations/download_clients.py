@@ -302,6 +302,7 @@ class BaseDirectDownload(Download):
                         scan_type=scan_type,
                         resolution=resolution,
                         dpi=dpi,
+                        notes=None,
                     ),
                 )
 
@@ -755,6 +756,7 @@ class MegaDownload(BaseDirectDownload):
                         scan_type=scan_type,
                         resolution=resolution,
                         dpi=dpi,
+                        notes=None,
                     ),
                 )
 
@@ -940,6 +942,7 @@ class TorrentDownload(ExternalDownload, BaseDirectDownload):
                         scan_type=scan_type,
                         resolution=resolution,
                         dpi=dpi,
+                        notes=None,
                     ),
                 )
 

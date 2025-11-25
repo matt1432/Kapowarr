@@ -512,7 +512,7 @@ class Volume:
         if not _skip_files:
             cursor.execute(
                 """
-                SELECT i.id AS issue_id, f.id AS file_id, filepath, size, releaser, scan_type, resolution, dpi
+                SELECT i.id AS issue_id, f.id AS file_id, filepath, size, releaser, scan_type, resolution, dpi, notes
                 FROM files f
                 INNER JOIN issues_files if
                     ON f.id = if.file_id
@@ -525,15 +525,16 @@ class Volume:
             )
             for file in cursor:
                 file_mapping.setdefault(file[0], []).append(
-                    {
-                        "id": file["file_id"],
-                        "filepath": file["filepath"],
-                        "size": file["size"],
-                        "releaser": file["releaser"],
-                        "scan_type": file["scan_type"],
-                        "resolution": file["resolution"],
-                        "dpi": file["dpi"],
-                    }
+                    FileData(
+                        id=file["file_id"],
+                        filepath=file["filepath"],
+                        size=file["size"],
+                        releaser=file["releaser"],
+                        scan_type=file["scan_type"],
+                        resolution=file["resolution"],
+                        dpi=file["dpi"],
+                        notes=file["notes"],
+                    )
                 )
 
         result = []

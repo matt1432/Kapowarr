@@ -81,6 +81,7 @@ export default function EditFileModalContent({
     const [releaser, setReleaser] = useState(data?.releaser ?? '');
     const [resolution, setResolution] = useState(data?.resolution ?? '');
     const [scanType, setScanType] = useState(data?.scanType ?? '');
+    const [notes, setNotes] = useState(data?.notes ?? '');
 
     const [prevData, setPrevData] = useState(data);
     if (data !== prevData) {
@@ -91,6 +92,7 @@ export default function EditFileModalContent({
             setReleaser(data.releaser ?? '');
             setResolution(data.resolution ?? '');
             setScanType(data.scanType ?? '');
+            setNotes(data.notes ?? '');
         }
     }
 
@@ -112,6 +114,9 @@ export default function EditFileModalContent({
                 case 'scanType':
                     setScanType(value);
                     break;
+                case 'notes':
+                    setNotes(value);
+                    break;
             }
         },
         [],
@@ -124,6 +129,7 @@ export default function EditFileModalContent({
             releaser,
             resolution,
             scanType,
+            notes,
         });
 
         if (!updateError) {
@@ -136,6 +142,7 @@ export default function EditFileModalContent({
         releaser,
         resolution,
         scanType,
+        notes,
         updateFile,
         fileId,
         refetchFiles,
@@ -194,6 +201,18 @@ export default function EditFileModalContent({
                             name="scanType"
                             value={scanType}
                             helpText={translate('ScanTypeHelpText')}
+                            onChange={handleInputChange}
+                        />
+                    </FormGroup>
+
+                    <FormGroup size={sizes.MEDIUM}>
+                        <FormLabel>{translate('Notes')}</FormLabel>
+
+                        <FormInputGroup
+                            type={inputTypes.TEXT}
+                            name="notes"
+                            value={notes}
+                            helpText={translate('NotesHelpText')}
                             onChange={handleInputChange}
                         />
                     </FormGroup>

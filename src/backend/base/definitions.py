@@ -632,6 +632,7 @@ class FileExtraInfo(TypedDict):
     scan_type: str | None
     resolution: str | None
     dpi: str | None
+    notes: str | None
 
 
 class FilenameData(TypedDict):
@@ -800,6 +801,7 @@ class SVNamingKeys(BaseNamingKeys):
     scan_type: str | None
     resolution: str | None
     dpi: str | None
+    notes: str | None
 
 
 @dataclass
@@ -1415,6 +1417,7 @@ class Download(ABC):
             scan_type=self.scan_type or "",
             resolution=self.resolution or "",
             dpi=self.dpi or "",
+            notes=None,
         )
 
     def __repr__(self) -> str:

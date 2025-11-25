@@ -145,6 +145,11 @@ def _get_volume_naming_keys(
 
     sv_mapping = SV_TO_FULL_TERM if long_special_version else SV_TO_SHORT_TERM
 
+    def _get_file_info(key: str) -> str | None:
+        if file_data is not None and key in file_data and file_data[key] != "":
+            return file_data[key]
+        return None
+
     return SVNamingKeys(
         series_name=series_name,
         clean_series_name=clean_title,
@@ -153,26 +158,11 @@ def _get_volume_naming_keys(
         year=volume_data.year,
         publisher=clean_filestring(volume_data.publisher),
         special_version=sv_mapping.get(volume_data.special_version),
-        releaser=file_data["releaser"]
-        if file_data is not None
-        and "releaser" in file_data
-        and file_data["releaser"] != ""
-        else None,
-        scan_type=file_data["scan_type"]
-        if file_data is not None
-        and "scan_type" in file_data
-        and file_data["scan_type"] != ""
-        else None,
-        resolution=file_data["resolution"]
-        if file_data is not None
-        and "resolution" in file_data
-        and file_data["resolution"] != ""
-        else None,
-        dpi=file_data["dpi"]
-        if file_data is not None
-        and "dpi" in file_data
-        and file_data["dpi"] != ""
-        else None,
+        releaser=_get_file_info("releaser"),
+        scan_type=_get_file_info("scan_type"),
+        resolution=_get_file_info("resolution"),
+        dpi=_get_file_info("dpi"),
+        notes=_get_file_info("notes"),
     )
 
 

@@ -8,6 +8,7 @@ export interface RawFileData {
     scan_type: string;
     resolution: string;
     dpi: string;
+    notes: string;
 }
 
 export type FileData = CamelCasedProperties<RawFileData>;

@@ -11,6 +11,7 @@ from backend.internals.db import get_db, iter_commit
 def migrate_react() -> None:
     from backend.internals.settings import Settings
 
+    # New Tables
     get_db().executescript("""
         CREATE TABLE IF NOT EXISTS marvel_issues(
             id INTEGER PRIMARY KEY,
@@ -29,6 +30,7 @@ def migrate_react() -> None:
         );
     """)
 
+    # Migrate "added_kapowarr_react_columns" in case it is still a bool
     s = Settings().get_settings().todict()
 
     if (
@@ -44,6 +46,7 @@ def migrate_react() -> None:
 
     s = Settings().get_settings().todict()
 
+    # Migrations
     if s["added_kapowarr_react_columns"] < 1:
         get_db().executescript("""
             BEGIN TRANSACTION;
@@ -89,6 +92,19 @@ def migrate_react() -> None:
             COMMIT;
         """)
         Settings().update({"added_kapowarr_react_columns": 2})
+        s = Settings().get_settings().todict()
+
+    if s["added_kapowarr_react_columns"] < 3:
+        get_db().executescript("""
+            BEGIN TRANSACTION;
+            PRAGMA defer_foreign_keys = ON;
+
+            ALTER TABLE files ADD COLUMN
+                notes VARCHAR(255);
+
+            COMMIT;
+        """)
+        Settings().update({"added_kapowarr_react_columns": 3})
         s = Settings().get_settings().todict()
 
 

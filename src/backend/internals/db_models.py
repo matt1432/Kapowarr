@@ -26,7 +26,7 @@ class FilesDB:
         if volume_id:
             cursor.execute(
                 """
-                SELECT DISTINCT f.id, filepath, size, releaser, scan_type, resolution, dpi
+                SELECT DISTINCT f.id, filepath, size, releaser, scan_type, resolution, dpi, notes
                 FROM files f
                 INNER JOIN issues_files if
                 INNER JOIN issues i
@@ -42,7 +42,7 @@ class FilesDB:
         elif issue_id:
             cursor.execute(
                 """
-                SELECT DISTINCT f.id, filepath, size, releaser, scan_type, resolution, dpi
+                SELECT DISTINCT f.id, filepath, size, releaser, scan_type, resolution, dpi, notes
                 FROM files f
                 INNER JOIN issues_files if
                 ON f.id = if.file_id
@@ -55,7 +55,7 @@ class FilesDB:
         elif file_id:
             cursor.execute(
                 """
-                SELECT id, filepath, size, releaser, scan_type, resolution, dpi
+                SELECT id, filepath, size, releaser, scan_type, resolution, dpi, notes
                 FROM files f
                 WHERE f.id = ?
                 LIMIT 1;
@@ -66,7 +66,7 @@ class FilesDB:
         elif filepath:
             cursor.execute(
                 """
-                SELECT id, filepath, size, releaser, scan_type, resolution, dpi
+                SELECT id, filepath, size, releaser, scan_type, resolution, dpi, notes
                 FROM files f
                 WHERE f.filepath = ?
                 LIMIT 1;
@@ -76,7 +76,7 @@ class FilesDB:
 
         else:
             cursor.execute("""
-                SELECT id, filepath, size, releaser, scan_type, resolution, dpi
+                SELECT id, filepath, size, releaser, scan_type, resolution, dpi, notes
                 FROM files
                 ORDER BY filepath;
                 """)
@@ -169,8 +169,8 @@ class FilesDB:
             cursor.execute(
                 """
                     INSERT OR IGNORE INTO
-                        files(filepath, size, releaser, scan_type, resolution, dpi)
-                    VALUES (?,?,?,?,?,?)
+                        files(filepath, size, releaser, scan_type, resolution, dpi, notes)
+                    VALUES (?,?,?,?,?,?,?)
                 """,
                 (
                     filepath,
@@ -179,6 +179,7 @@ class FilesDB:
                     file_info["scan_type"],
                     file_info["resolution"],
                     file_info["dpi"],
+                    file_info["notes"],
                 ),
             )
 
@@ -215,6 +216,7 @@ class FilesDB:
             "resolution",
             "dpi",
             "size",
+            "notes",
         )
 
         for key, value in data.items():
@@ -306,7 +308,7 @@ class GeneralFilesDB:
             get_db()
             .execute(
                 """
-            SELECT f.id, filepath, size, file_type, releaser, scan_type, resolution, dpi
+            SELECT f.id, filepath, size, file_type, releaser, scan_type, resolution, dpi, notes
             FROM files f
             INNER JOIN volume_files vf
             ON f.id = vf.file_id

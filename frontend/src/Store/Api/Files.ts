@@ -16,6 +16,7 @@ export interface UpdateFileParams {
     scanType?: string;
     resolution?: string;
     dpi?: string;
+    notes?: string;
 }
 
 // IMPLEMENTATIONS
