@@ -6,6 +6,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 // Redux
 import { useRootSelector } from 'Store/createAppStore';
 
+import { useFetchQueueDetails } from 'Store/Api/Queue';
+
 import {
     useLazyManualSearchQuery,
     useLibgenFileSearchMutation,
@@ -239,6 +241,18 @@ export function LibgenFileSearch({ searchPayload }: InteractiveSearchProps) {
     return <InternalSearch searchPayload={searchPayload} {...searchProps} />;
 }
 
+function useQueueInfo({ searchPayload }: InteractiveSearchProps): number[] {
+    const { queue } = useFetchQueueDetails({
+        volumeId: 'volumeId' in searchPayload ? searchPayload.volumeId : -1,
+    });
+
+    if (!('volumeId' in searchPayload)) {
+        return [];
+    }
+
+    return queue.map((item) => item.issueId).filter((id) => id !== null);
+}
+
 export default function InteractiveSearch({
     searchPayload,
 }: InteractiveSearchProps) {
@@ -264,15 +278,20 @@ export default function InteractiveSearch({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const { hideDownloaded, hideUnmonitored, hideUnmatched } = useRootSelector(
-        (state) => state.tableOptions.interactiveSearch,
-    );
+    const { hideDownloaded, hideDownloading, hideUnmonitored, hideUnmatched } =
+        useRootSelector((state) => state.tableOptions.interactiveSearch);
+
+    const downloadingIds = useQueueInfo({ searchPayload });
 
     const issues = useMemo(() => {
         const volumeIssues =
             'issues' in searchPayload ? searchPayload.issues : undefined;
 
-        if (!volumeIssues || (!hideDownloaded && !hideUnmonitored)) {
+        // Whether to filter the results
+        if (
+            !volumeIssues ||
+            (!hideDownloaded && !hideUnmonitored && !hideDownloading)
+        ) {
             return undefined;
         }
 
@@ -282,12 +301,24 @@ export default function InteractiveSearch({
             result = result.filter((issue) => issue.files.length === 0);
         }
 
+        if (hideDownloading) {
+            result = result.filter(
+                (issue) => !downloadingIds.includes(issue.id),
+            );
+        }
+
         if (hideUnmonitored) {
             result = result.filter((issue) => issue.monitored);
         }
 
         return result.map((issue) => issue.calculatedIssueNumber);
-    }, [hideDownloaded, hideUnmonitored, searchPayload]);
+    }, [
+        downloadingIds,
+        hideDownloaded,
+        hideDownloading,
+        hideUnmonitored,
+        searchPayload,
+    ]);
 
     const items = useMemo(() => {
         const items = hideUnmatched ? data.filter((item) => item.match) : data;

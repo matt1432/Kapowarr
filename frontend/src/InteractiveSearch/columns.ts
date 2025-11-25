@@ -18,6 +18,7 @@ export type InteractiveSearchColumnName =
 
 export default {
     hideDownloaded: false,
+    hideDownloading: false,
     hideUnmonitored: false,
     hideUnmatched: false,
 

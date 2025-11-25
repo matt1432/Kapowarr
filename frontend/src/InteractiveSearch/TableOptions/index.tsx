@@ -31,16 +31,18 @@ interface InteractiveSearchTableOptionsProps {
 export default function InteractiveSearchTableOptions({
     onTableOptionChange,
 }: InteractiveSearchTableOptionsProps) {
-    const { hideDownloaded, hideUnmonitored, hideUnmatched } = useRootSelector(
-        (state) => state.tableOptions.interactiveSearch,
-    );
+    const { hideDownloaded, hideDownloading, hideUnmonitored, hideUnmatched } =
+        useRootSelector((state) => state.tableOptions.interactiveSearch);
 
     const onTableOptionChangeWrapper = useCallback(
         ({
             name,
             value,
         }: CheckInputChanged<
-            'hideUnmonitored' | 'hideDownloaded' | 'hideUnmatched'
+            | 'hideUnmonitored'
+            | 'hideDownloaded'
+            | 'hideDownloading'
+            | 'hideUnmatched'
         >) => {
             onTableOptionChange({
                 tableName: 'interactiveSearch',
@@ -60,6 +62,18 @@ export default function InteractiveSearchTableOptions({
                     name="hideDownloaded"
                     value={hideDownloaded}
                     helpText={translate('HideDownloadedIssuesHelpText')}
+                    onChange={onTableOptionChangeWrapper}
+                />
+            </FormGroup>
+
+            <FormGroup>
+                <FormLabel>{translate('HideDownloadingIssues')}</FormLabel>
+
+                <FormInputGroup
+                    type={inputTypes.CHECK}
+                    name="hideDownloading"
+                    value={hideDownloading}
+                    helpText={translate('HideDownloadingIssuesHelpText')}
                     onChange={onTableOptionChangeWrapper}
                 />
             </FormGroup>

@@ -88,6 +88,7 @@ export interface ColumnNameMap {
 interface _ExtraPropsMap {
     interactiveSearch: {
         hideDownloaded: boolean;
+        hideDownloading: boolean;
         hideUnmonitored: boolean;
         hideUnmatched: boolean;
     };
