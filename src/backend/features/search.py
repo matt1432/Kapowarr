@@ -21,6 +21,7 @@ from backend.base.helpers import (
     get_subclasses,
 )
 from backend.base.logging import LOGGER
+from backend.implementations.comicvine import ComicVine
 from backend.implementations.getcomics import search_getcomics
 from backend.implementations.matching import check_search_result_match
 from backend.implementations.volumes import Volume
@@ -258,6 +259,10 @@ class SearchLibgenPlus(SearchSource):
             issue_number=issue_number,
             libgen_series_id=series_ids,
             libgen_site_url=Constants.LIBGEN_SITE_URL,
+            flaresolverr_url=settings.flaresolverr_base_url
+            if settings.flaresolverr_base_url != ""
+            else None,
+            cv_cache=ComicVine().cache,
         )
 
         resulting_libgen_series_ids: set[str] = set()
