@@ -829,6 +829,14 @@ def from_filesize(filesize: str) -> int | None:
 
 
 # region Searching
+async def _search_page(session: AsyncSession, url: str, query: str):
+    return await session.get_text(
+        url,
+        params={"s": query},
+        quiet_fail=True,
+    )
+
+
 async def search_getcomics(
     session: AsyncSession,
     query: str,
@@ -854,11 +862,7 @@ async def search_getcomics(
 
     # Fetch pages beyond first concurrently
     other_tasks = [
-        session.get_text(
-            f"{Constants.GC_SITE_URL}/page/{page}",
-            params={"s": query},
-            quiet_fail=True,
-        )
+        _search_page(session, f"{Constants.GC_SITE_URL}/page/{page}", query)
         for page in range(2, max_page + 1)
     ]
 
