@@ -50,7 +50,7 @@ def find_outliers(files: list[ZipInfo]) -> list[str]:
 
     for filename in filenames:
         # We use startswith here because multi-pages images might not have the same prefix
-        if not basename(filename).startswith(most_common_prefix):
+        if not filename.startswith(most_common_prefix):
             outliers.append(filename)
 
     # If there are as many outliers as filenames, there are no outliers
