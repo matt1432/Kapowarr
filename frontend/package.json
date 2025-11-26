@@ -14,7 +14,7 @@
         "@fortawesome/free-solid-svg-icons": "7.1.0",
         "@fortawesome/react-fontawesome": "3.1.0",
         "@juggle/resize-observer": "3.4.0",
-        "@reduxjs/toolkit": "2.10.1",
+        "@reduxjs/toolkit": "2.11.0",
         "classnames": "2.5.1",
         "copy-to-clipboard": "3.3.3",
         "dompurify": "3.3.0",
@@ -47,10 +47,10 @@
         "use-debounce": "10.0.6"
     },
     "devDependencies": {
-        "@types/lodash": "4.17.20",
+        "@types/lodash": "4.17.21",
         "@types/mousetrap": "1.6.15",
         "@types/node": "24.10.1",
-        "@types/react": "19.2.6",
+        "@types/react": "19.2.7",
         "@types/react-autosuggest": "10.1.11",
         "@types/react-dom": "19.2.3",
         "@types/react-lazy-load-image-component": "1.6.5",
@@ -74,8 +74,8 @@
         "prettier-plugin-brace-style": "0.8.1",
         "type-fest": "5.2.0",
         "typescript": "5.9.3",
-        "typescript-eslint": "8.47.0",
-        "vite": "7.2.2",
+        "typescript-eslint": "8.48.0",
+        "vite": "7.2.4",
         "vite-css-modules": "1.11.1"
     }
 }
