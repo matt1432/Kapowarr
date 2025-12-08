@@ -1,6 +1,6 @@
 from asyncio import gather, run
 
-from libgencomics import LibgenSearch, ResultFile
+from libgencomics import LibgenException, LibgenSearch, ResultFile
 
 from backend.base.definitions import (
     QUERY_FORMATS,
@@ -250,20 +250,26 @@ class SearchLibgenPlus(SearchSource):
             else self.issue_number
         )
 
-        file_results: list[
-            ResultFile
-        ] = await LibgenSearch().search_comicvine_id(
-            query=self.query,
-            api_key=settings.comicvine_api_key,
-            id=self.volume.get_data().comicvine_id,
-            issue_number=issue_number,
-            libgen_series_id=series_ids,
-            libgen_site_url=Constants.LIBGEN_SITE_URL,
-            flaresolverr_url=settings.flaresolverr_base_url + Constants.FS_API_BASE
-            if settings.flaresolverr_base_url != ""
-            else None,
-            cv_cache=ComicVine().cache,
-        )
+        file_results: list[ResultFile] = []
+
+        try:
+            flaresolverr_url = (
+                settings.flaresolverr_base_url + Constants.FS_API_BASE
+                if settings.flaresolverr_base_url != ""
+                else None
+            )
+            file_results = await LibgenSearch().search_comicvine_id(
+                query=self.query,
+                api_key=settings.comicvine_api_key,
+                id=self.volume.get_data().comicvine_id,
+                issue_number=issue_number,
+                libgen_series_id=series_ids,
+                libgen_site_url=Constants.LIBGEN_SITE_URL,
+                flaresolverr_url=flaresolverr_url,
+                cv_cache=ComicVine().cache,
+            )
+        except LibgenException as e:
+            LOGGER.info(e)
 
         resulting_libgen_series_ids: set[str] = set()
 
@@ -283,7 +289,7 @@ class SearchLibgenPlus(SearchSource):
                     continue
 
             if not settings.include_scanned_books:
-                # we want to filter out scanned books
+                # we want to filter out physically scanned books
                 if (file_result.scan_type or "") != "digital":
                     continue
 
