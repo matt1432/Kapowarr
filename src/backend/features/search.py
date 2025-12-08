@@ -259,7 +259,7 @@ class SearchLibgenPlus(SearchSource):
             issue_number=issue_number,
             libgen_series_id=series_ids,
             libgen_site_url=Constants.LIBGEN_SITE_URL,
-            flaresolverr_url=settings.flaresolverr_base_url
+            flaresolverr_url=settings.flaresolverr_base_url + Constants.FS_API_BASE
             if settings.flaresolverr_base_url != ""
             else None,
             cv_cache=ComicVine().cache,
