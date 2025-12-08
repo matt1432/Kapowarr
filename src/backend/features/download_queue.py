@@ -109,6 +109,7 @@ class DownloadHandler(metaclass=Singleton):
                 download.source_type == DownloadSource.LIBGENPLUS
                 and download.attempts < 15
             ):
+                current_index = self.queue.index(download)
                 self.queue.remove(download)
                 ws.send_queue_ended(download)
 
@@ -117,7 +118,7 @@ class DownloadHandler(metaclass=Singleton):
                 )
                 download.state = DownloadState.QUEUED_STATE
                 self.queue.insert(
-                    0,
+                    current_index,
                     self.__prepare_downloads_for_queue(
                         [download], forced_match=False
                     )[0],
