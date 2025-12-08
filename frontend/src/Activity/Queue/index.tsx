@@ -144,7 +144,7 @@ export default function Queue() {
                         items={items}
                         itemRenderer={(item) => (
                             <QueueRow
-                                key={item.id}
+                                key={item.downloadLink}
                                 {...item}
                                 columns={columns}
                                 queueLength={items.length}
