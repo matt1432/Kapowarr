@@ -366,17 +366,17 @@ async def search_multiple_queries(
         ]
         responses = await gather(*searches)
 
-    # There might be duplicates because of similar queries
-    # but they will be filtered out in the frontend
     search_results: list[SearchResultData] = []
     processed_links = set()
     for response in responses:
         for result in response:
+            result_id = f"{result["link"]}-{result["web_sub_title"] or ""}"
+
             # Don't add if the link is already in the results
             # Avoids duplicates, as multiple formats can return the same result
-            if result["link"] not in processed_links:
+            if result_id not in processed_links:
                 search_results.append(result)
-                processed_links.add(result["link"])
+                processed_links.add(result_id)
 
     return search_results
 
