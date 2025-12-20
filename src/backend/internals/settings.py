@@ -22,7 +22,7 @@ from backend.base.definitions import (
     SeedingHandling,
 )
 from backend.base.files import (
-    folder_is_inside_folder,
+    are_folders_colliding,
     folder_path,
     uppercase_drive_letter,
 )
@@ -458,11 +458,10 @@ class Settings(metaclass=Singleton):
                 force_suffix(abspath(value))
             )
 
-            for rf in RootFolders().get_all():
-                if folder_is_inside_folder(
-                    rf.folder, converted_value
-                ) or folder_is_inside_folder(converted_value, rf.folder):
-                    raise InvalidKeyValue(key, value)
+            if are_folders_colliding(
+                converted_value, RootFolders().get_folder_list()
+            ):
+                raise InvalidKeyValue(key, value)
 
         elif key == "concurrent_direct_downloads" and value <= 0:
             raise InvalidKeyValue(key, value)

@@ -74,7 +74,7 @@ def propose_library_import(
     LOGGER.info("Loading library import")
 
     # Get all files in all root folders (with filter applied if given)
-    root_folders = {abspath(r.folder) for r in RootFolders().get_all()}
+    root_folders = {abspath(r) for r in RootFolders().get_folder_list()}
 
     if included_folders_str and len(included_folders_str) != 0:
         included_folders = included_folders_str.split(",")

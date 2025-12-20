@@ -778,7 +778,7 @@ class BlocklistEntry:
 class RootFolder:
     id: int
     folder: str
-    size: SizeData
+    size: SizeData | None
 
     def todict(self) -> dict[str, Any]:
         return asdict(self)
