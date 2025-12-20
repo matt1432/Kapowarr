@@ -181,7 +181,12 @@ class ExternalClients:
 
         from backend.implementations.torrent_clients import external_clients
 
-        return {client.client_type: client for client in external_clients}
+        return {
+            client.client_type: client
+            for client in sorted(
+                external_clients, key=lambda c: c.client_type.lower()
+            )
+        }
 
     @staticmethod
     def test(
