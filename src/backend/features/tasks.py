@@ -25,7 +25,12 @@ from backend.implementations.conversion import mass_convert
 from backend.implementations.naming import mass_rename
 from backend.implementations.volumes import Issue, Volume, refresh_and_scan
 from backend.internals.db import close_db, get_db
-from backend.internals.server import WebSocket
+from backend.internals.server import (
+    TaskAddedEvent,
+    TaskEndedEvent,
+    TaskStatusEvent,
+    WebSocket,
+)
 
 
 class Task(ABC):
@@ -109,7 +114,7 @@ class AutoSearchIssue(Task):
         volume_title = Volume(self._volume_id).vd.title
         issue_number = Issue(self._issue_id).get_data().issue_number
         self.message = f"Searching for {volume_title} #{issue_number}"
-        WebSocket().update_task_status(self)
+        WebSocket().emit(TaskStatusEvent(self.message))
 
         # Get search results and download them
         results = auto_search(self._volume_id, self._issue_id)
@@ -163,7 +168,7 @@ class MassRenameIssue(Task):
         volume_title = Volume(self._volume_id).vd.title
         issue_number = Issue(self._issue_id).get_data().issue_number
         self.message = f"Renaming files for {volume_title} #{issue_number}"
-        WebSocket().update_task_status(self)
+        WebSocket().emit(TaskStatusEvent(self.message))
 
         mass_rename(
             self._volume_id,
@@ -218,7 +223,7 @@ class MassConvertIssue(Task):
         volume_title = Volume(self._volume_id).vd.title
         issue_number = Issue(self._issue_id).get_data().issue_number
         self.message = f"Converting files for {volume_title} #{issue_number}"
-        WebSocket().update_task_status(self)
+        WebSocket().emit(TaskStatusEvent(self.message))
 
         mass_convert(
             self._volume_id,
@@ -266,7 +271,7 @@ class AutoSearchVolume(Task):
     def run(self) -> list[tuple[SearchResultData, int, int | None]]:
         volume_title = Volume(self._volume_id).vd.title
         self.message = f"Searching for {volume_title}"
-        WebSocket().update_task_status(self)
+        WebSocket().emit(TaskStatusEvent(self.message))
 
         # Get search results and download them
         results = auto_search(self._volume_id)
@@ -305,7 +310,7 @@ class RefreshAndScanVolume(Task):
     def run(self) -> None:
         volume_title = Volume(self._volume_id).vd.title
         self.message = f"Updating info on {volume_title}"
-        WebSocket().update_task_status(self)
+        WebSocket().emit(TaskStatusEvent(self.message))
 
         try:
             refresh_and_scan(self._volume_id, update_websocket=True)
@@ -354,7 +359,7 @@ class MassRenameVolume(Task):
     def run(self) -> None:
         volume_title = Volume(self._volume_id).vd.title
         self.message = f"Renaming files for {volume_title}"
-        WebSocket().update_task_status(self)
+        WebSocket().emit(TaskStatusEvent(self.message))
 
         mass_rename(
             self._volume_id,
@@ -404,7 +409,7 @@ class MassConvertVolume(Task):
     def run(self) -> None:
         volume_title = Volume(self._volume_id).vd.title
         self.message = f"Converting files for {volume_title}"
-        WebSocket().update_task_status(self)
+        WebSocket().emit(TaskStatusEvent(self.message))
 
         mass_convert(
             self._volume_id,
@@ -453,7 +458,7 @@ class UpdateAll(Task):
 
     def run(self) -> None:
         self.message = "Updating info on all volumes"
-        WebSocket().update_task_status(self)
+        WebSocket().emit(TaskStatusEvent(self.message))
 
         try:
             refresh_and_scan(
@@ -495,7 +500,7 @@ class SearchAll(Task):
             if self.stop:
                 break
             self.message = f"Searching for {volume_title}"
-            ws.update_task_status(self)
+            ws.emit(TaskStatusEvent(self.message))
             # Get search results and download them
             results = auto_search(volume_id)
             if results:
@@ -559,12 +564,12 @@ class TaskHandler(metaclass=Singleton):
                     "An error occured while trying to run a task: "
                 )
                 task.message = "AN ERROR OCCURED"
-                socket.update_task_status(task)
+                socket.emit(TaskStatusEvent(task.message))
                 sleep(1.5)
 
             finally:
                 if not task.stop:
-                    socket.send_task_ended(task)
+                    socket.emit(TaskEndedEvent(task))
                     self.queue.pop(0)
                     self._process_queue()
 
@@ -606,7 +611,7 @@ class TaskHandler(metaclass=Singleton):
         }
         self.queue.append(task_data)
         LOGGER.info(f"Added task: {task.display_title} ({id})")
-        WebSocket().send_task_added(task)
+        WebSocket().emit(TaskAddedEvent(task))
         self._process_queue()
         return id
 
@@ -759,7 +764,7 @@ class TaskHandler(metaclass=Singleton):
         task["thread"].join()
         self.queue.remove(task)
         LOGGER.info(f"Removed task: {task['task'].display_name} ({task_id})")
-        WebSocket().send_task_ended(task["task"])
+        WebSocket().emit(TaskEndedEvent(task["task"]))
         return
 
 

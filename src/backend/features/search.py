@@ -370,7 +370,7 @@ async def search_multiple_queries(
     processed_links = set()
     for response in responses:
         for result in response:
-            result_id = f"{result["link"]}-{result["web_sub_title"] or ""}"
+            result_id = f"{result['link']}-{result['web_sub_title'] or ''}"
 
             # Don't add if the link is already in the results
             # Avoids duplicates, as multiple formats can return the same result

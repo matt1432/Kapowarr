@@ -37,6 +37,7 @@ from backend.base.helpers import (
 from backend.base.logging import LOGGER, set_log_level
 from backend.internals.db import DBConnection, commit, get_db
 from backend.internals.db_migration import DatabaseMigrationHandler
+from backend.internals.server import SettingsUpdateEvent
 
 
 class AboutData(TypedDict):
@@ -303,7 +304,7 @@ class Settings(metaclass=Singleton):
 
         LOGGER.info(f"Settings changed: {formatted_data}")
 
-        WebSocket().send_settings_updated(self.get_public_settings())
+        WebSocket().emit(SettingsUpdateEvent(self.get_public_settings()))
 
         return
 

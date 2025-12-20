@@ -50,7 +50,7 @@ from backend.implementations.remote_mapping import RemoteMappings
 from backend.implementations.torrent_clients.qBittorrent import qBittorrent
 from backend.implementations.volumes import Issue, Volume
 from backend.internals.db import get_db
-from backend.internals.server import WebSocket
+from backend.internals.server import QueueStatusEvent, WebSocket
 from backend.internals.settings import Settings
 
 if TYPE_CHECKING:
@@ -366,7 +366,8 @@ class BaseDirectDownload(Download):
         self._state = DownloadState.DOWNLOADING_STATE
         size_downloaded = 0
         ws = WebSocket()
-        ws.update_queue_status(self)
+        status_event = QueueStatusEvent(self)
+        ws.emit(status_event)
 
         with self._fetch_pure_link() as r, open(self.files[0], "wb") as f:
             self.__r = r
@@ -396,7 +397,7 @@ class BaseDirectDownload(Download):
                         )
 
                     start_time = perf_counter()
-                    ws.update_queue_status(self)
+                    ws.emit(status_event)
 
             except RequestException:
                 self._state = DownloadState.FAILED_STATE
@@ -782,9 +783,11 @@ class MegaDownload(BaseDirectDownload):
     def run(self) -> None:
         self._state = DownloadState.DOWNLOADING_STATE
         ws = WebSocket()
+        status_event = QueueStatusEvent(self)
         try:
             self._mega.download(
-                self.files[0], lambda: ws.update_queue_status(self)
+                self.files[0],
+                lambda: ws.emit(status_event),
             )
 
         except ClientNotWorking:

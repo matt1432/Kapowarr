@@ -1,6 +1,6 @@
 """
 Setting up, running and shutting down the webserver.
-Also handling startup types.
+Also handling startup types and the websocket.
 """
 
 from __future__ import annotations
@@ -21,9 +21,10 @@ from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 from backend.base.definitions import (
     Constants,
-    SocketEvent,
     StartType,
     StartTypeHandler,
+    WebSocketEvent,
+    WebSocketEventType,
 )
 from backend.base.files import folder_path
 from backend.base.helpers import Singleton
@@ -34,7 +35,6 @@ from backend.internals.db import (
     set_db_location,
     setup_db_adapters_and_converters,
 )
-from backend.internals.settings import Settings
 
 if TYPE_CHECKING:
     from flask.ctx import AppContext
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from backend.base.definitions import Download
     from backend.features.tasks import Task
     from backend.implementations.volumes import Issue, Volume
-    from backend.internals.settings import PublicSettingsValues
+    from backend.internals.settings import PublicSettingsValues, Settings
 
 
 # region Thread Manager
@@ -329,20 +329,24 @@ class WebSocket(SocketIO, metaclass=Singleton):
             self.client_manager.disconnect(sid, "/")
         return
 
-    def emit(  # pyright: ignore
-        self,
-        event: SocketEvent,
-        data: dict[str, Any],
-    ) -> None:
+    def emit(self, event: WebSocketEvent) -> None:  # pyright: ignore
+        """Emit an event.
+
+        Args:
+            event (WebSocketEvent): The event to emit.
+        """
         cm = self.client_manager
 
         if not cm.write_only:
-            super().emit(event.value, data)
+            super().emit(
+                event.get_type().value,
+                event.get_body(),
+            )
         else:
             message = {
                 "method": "emit",
-                "event": event.value,
-                "data": data,
+                "event": event.get_type().value,
+                "data": event.get_body(),
                 "namespace": "/",
                 "host_id": cm.host_id,
             }
@@ -351,201 +355,296 @@ class WebSocket(SocketIO, metaclass=Singleton):
 
         return
 
-    def send_settings_updated(self, settings: PublicSettingsValues) -> None:
-        self.emit(
-            SocketEvent.SETTINGS_UPDATED,
-            {
-                "settings": settings.todict(),
-            },
-        )
-        return
 
-    def send_volume_updated(
-        self, volume: Volume, called_from: str = ""
-    ) -> None:
-        self.emit(
-            SocketEvent.VOLUME_UPDATED,
-            {
-                "called_from": called_from,
-                "volume": volume.get_public_keys(),
-            },
-        )
-        return
+# region Websocket Events
+class AddedToQueueEvent(WebSocketEvent):
+    "A download has been added to the queue"
 
-    def send_volume_deleted(self, volume_id: int) -> None:
-        self.emit(
-            SocketEvent.VOLUME_DELETED,
-            {
-                "volume_id": volume_id,
-            },
-        )
-        return
-
-    def send_issue_updated(self, issue: Issue, called_from: str = "") -> None:
-        self.emit(
-            SocketEvent.ISSUE_UPDATED,
-            {
-                "called_from": called_from,
-                "issue": issue.get_data().todict(),
-            },
-        )
-        return
-
-    def send_issue_deleted(self, volume_id: int, issue_id: int) -> None:
-        self.emit(
-            SocketEvent.ISSUE_DELETED,
-            {
-                "volume_id": volume_id,
-                "issue_id": issue_id,
-            },
-        )
-        return
-
-    def send_task_added(self, task: Task) -> None:
-        """Send a message stating a task that has been added
-        to the queue.
-
-        Args:
-            task (Task): The task that has been added.
-        """
-        self.emit(
-            SocketEvent.TASK_ADDED,
-            {
-                "action": task.action,
-                "volume_id": task.volume_id,
-                "issue_id": task.issue_id,
-                "called_from": task.called_from,
-            },
-        )
-        return
-
-    def send_task_ended(self, task: Task) -> None:
-        """Send a message stating a task that has been removed
-        from the queue. Either because it's finished or canceled.
-
-        Args:
-            task (Task): The task that has been removed.
-        """
-        self.emit(
-            SocketEvent.TASK_ENDED,
-            {
-                "action": task.action,
-                "volume_id": task.volume_id,
-                "issue_id": task.issue_id,
-                "called_from": task.called_from,
-            },
-        )
-        return
-
-    def update_task_status(
-        self, task: Task | None = None, message: str | None = None
-    ) -> None:
-        """Send a message with the new task queue status. Supply either
-        the task or the message.
-
-        Args:
-            task (Union[Task, None], optional): The task instance to send
-            the status of.
-                Defaults to None.
-
-            message (Union[str, None], optional): The message to send.
-                Defaults to None.
-        """
-        if task is not None:
-            self.emit(SocketEvent.TASK_STATUS, {"message": task.message})
-
-        elif message is not None:
-            self.emit(SocketEvent.TASK_STATUS, {"message": message})
-
-        return
-
-    def send_queue_added(self, download: Download) -> None:
-        """Send a message stating a download that has been added
-        to the queue.
+    def __init__(self, download: Download) -> None:
+        """Create the event.
 
         Args:
             download (Download): The download that has been added.
         """
-        self.emit(SocketEvent.QUEUE_ADDED, download.as_dict())
+        self.download = download
         return
 
-    def send_queue_ended(self, download: Download) -> None:
-        """Send a message stating a download that has been removed
-        from the queue. Either because it's finished or canceled.
+    def get_type(self) -> WebSocketEventType:
+        return WebSocketEventType.QUEUE_ADDED
+
+    def get_body(self) -> dict[str, Any]:
+        return self.download.as_dict()
+
+
+class QueueStatusEvent(WebSocketEvent):
+    "The status of a download has changed (progress, speed, state, etc.)"
+
+    def __init__(self, download: Download) -> None:
+        """Create the event.
 
         Args:
-            download (Download): The download that has been removed.
+            download (Download): The download for which the status
+                should be shared.
         """
-        self.emit(SocketEvent.QUEUE_ENDED, {"id": download.id})
+        self.download = download
         return
 
-    def update_queue_status(self, download: Download) -> None:
-        """Send a message with the new download queue status.
+    def get_type(self) -> WebSocketEventType:
+        return WebSocketEventType.QUEUE_STATUS
+
+    def get_body(self) -> dict[str, Any]:
+        return {
+            "id": self.download.id,
+            "status": self.download.state.value,
+            "size": self.download.size,
+            "speed": self.download.speed,
+            "progress": self.download.progress,
+        }
+
+
+class RemovedFromQueueEvent(WebSocketEvent):
+    """
+    A download has been removed from the queue because it has finished or
+    has been cancelled
+    """
+
+    def __init__(self, download: Download) -> None:
+        """Create the event.
 
         Args:
-            download (Download): The download instance to send the status of.
+            download (Download): The download that has been finished or cancelled.
         """
-        self.emit(
-            SocketEvent.QUEUE_STATUS,
-            {
-                "id": download.id,
-                "status": download.state.value,
-                "size": download.size,
-                "speed": download.speed,
-                "progress": download.progress,
-            },
-        )
+        self.download = download
         return
 
-    def update_mass_editor_status(
+    def get_type(self) -> WebSocketEventType:
+        return WebSocketEventType.QUEUE_ENDED
+
+    def get_body(self) -> dict[str, Any]:
+        return {"id": self.download.id}
+
+
+class TaskAddedEvent(WebSocketEvent):
+    "A task has been added to the queue"
+
+    def __init__(self, task: Task) -> None:
+        """Create the event.
+
+        Args:
+            task (Task): The task that has been added.
+        """
+        self.task = task
+        return
+
+    def get_type(self) -> WebSocketEventType:
+        return WebSocketEventType.TASK_ADDED
+
+    def get_body(self) -> dict[str, Any]:
+        return {
+            "action": self.task.action,
+            "volume_id": self.task.volume_id,
+            "issue_id": self.task.issue_id,
+            "called_from": self.task.called_from,
+        }
+
+
+class TaskStatusEvent(WebSocketEvent):
+    "Update on the status of the currently running task"
+
+    def __init__(self, message: str) -> None:
+        """Create the event.
+
+        Args:
+            message (str): The message representing the status of the task.
+        """
+        self.message = message
+        return
+
+    def get_type(self) -> WebSocketEventType:
+        return WebSocketEventType.TASK_STATUS
+
+    def get_body(self) -> dict[str, Any]:
+        return {"message": self.message}
+
+
+class TaskEndedEvent(WebSocketEvent):
+    """
+    A task has been removed from the queue because it has finished or
+    has been cancelled
+    """
+
+    def __init__(self, task: Task) -> None:
+        """Create the event.
+
+        Args:
+            task (Task): The task that has been finished or cancelled.
+        """
+        self.task = task
+        return
+
+    def get_type(self) -> WebSocketEventType:
+        return WebSocketEventType.TASK_ENDED
+
+    def get_body(self) -> dict[str, Any]:
+        return {
+            "action": self.task.action,
+            "volume_id": self.task.volume_id,
+            "issue_id": self.task.issue_id,
+            "called_from": self.task.called_from,
+        }
+
+
+class MassEditorStatusEvent(WebSocketEvent):
+    "Update on the Mass Editor progress"
+
+    def __init__(
         self, identifier: str, current_item: int, total_items: int
     ) -> None:
-        """Send a message with the progress on a Mass Editor job.
+        """Create the event.
 
         Args:
             identifier (str): The identifier of the job.
             current_item (int): The item number currently being worked on.
             total_items (int): The total number of items that will be worked on.
         """
-        self.emit(
-            SocketEvent.MASS_EDITOR_STATUS,
-            {
-                "identifier": identifier,
-                "current_item": current_item,
-                "total_items": total_items,
-            },
-        )
+        self.identifier = identifier
+        self.current_item = current_item
+        self.total_items = total_items
         return
 
-    def update_downloaded_status(
+    def get_type(self) -> WebSocketEventType:
+        return WebSocketEventType.MASS_EDITOR_STATUS
+
+    def get_body(self) -> dict[str, Any]:
+        return {
+            "identifier": self.identifier,
+            "current_item": self.current_item,
+            "total_items": self.total_items,
+        }
+
+
+class DownloadedStatusEvent(WebSocketEvent):
+    "A change in what issues are marked as downloaded or not for a volume"
+
+    def __init__(
         self,
         volume_id: int,
         not_downloaded_issues: list[int] = [],
         downloaded_issues: list[int] = [],
     ) -> None:
-        """Send a message with the changes in which issues are downloaded and
-        which aren't.
+        """Create the event.
 
         Args:
             volume_id (int): The ID of the volume.
 
             not_downloaded_issues (List[int], optional): The issue IDs that were
-            previously downloaded, but aren't anymore.
+                previously downloaded, but aren't anymore.
                 Defaults to [].
 
             downloaded_issues (List[int], optional): The issue IDs that were
-            previously not downloaded, but now are.
+                previously not downloaded, but now are.
                 Defaults to [].
         """
-        self.emit(
-            SocketEvent.DOWNLOADED_STATUS,
-            {
-                "volume_id": volume_id,
-                "not_downloaded_issues": not_downloaded_issues,
-                "downloaded_issues": downloaded_issues,
-            },
-        )
+        self.volume_id = volume_id
+        self.not_downloaded_issues = not_downloaded_issues
+        self.downloaded_issues = downloaded_issues
         return
+
+    def get_type(self) -> WebSocketEventType:
+        return WebSocketEventType.DOWNLOADED_STATUS
+
+    def get_body(self) -> dict[str, Any]:
+        return {
+            "volume_id": self.volume_id,
+            "not_downloaded_issues": self.not_downloaded_issues,
+            "downloaded_issues": self.downloaded_issues,
+        }
+
+
+class SettingsUpdateEvent(WebSocketEvent):
+    "A change in the server settings"
+
+    def __init__(self, settings: PublicSettingsValues) -> None:
+        self.settings = settings.todict()
+        return
+
+    def get_type(self) -> WebSocketEventType:
+        return WebSocketEventType.SETTINGS_UPDATED
+
+    def get_body(self) -> dict[str, Any]:
+        return {
+            "settings": self.settings,
+        }
+
+
+class VolumeUpdateEvent(WebSocketEvent):
+    "A change in a volume"
+
+    def __init__(self, volume: Volume, called_from: str = "") -> None:
+        self.volume = volume.get_public_keys()
+        self.called_from = called_from
+        return
+
+    def get_type(self) -> WebSocketEventType:
+        return WebSocketEventType.VOLUME_UPDATED
+
+    def get_body(self) -> dict[str, Any]:
+        return {
+            "called_from": self.called_from,
+            "volume": self.volume,
+        }
+
+
+class VolumeDeleteEvent(WebSocketEvent):
+    "A volume was deleted"
+
+    def __init__(self, volume_id: int) -> None:
+        self.volume_id = volume_id
+        return
+
+    def get_type(self) -> WebSocketEventType:
+        return WebSocketEventType.VOLUME_DELETED
+
+    def get_body(self) -> dict[str, Any]:
+        return {
+            "volume_id": self.volume_id,
+        }
+
+
+class IssueUpdateEvent(WebSocketEvent):
+    "A change in an issue"
+
+    def __init__(self, issue: Issue, called_from: str = "") -> None:
+        self.issue = issue.get_data().todict()
+        self.called_from = called_from
+        return
+
+    def get_type(self) -> WebSocketEventType:
+        return WebSocketEventType.ISSUE_UPDATED
+
+    def get_body(self) -> dict[str, Any]:
+        return {
+            "called_from": self.called_from,
+            "issue": self.issue,
+        }
+
+
+class IssueDeleteEvent(WebSocketEvent):
+    "An issue was deleted"
+
+    def __init__(self, volume_id: int, issue_id: int) -> None:
+        self.volume_id = volume_id
+        self.issue_id = issue_id
+        return
+
+    def get_type(self) -> WebSocketEventType:
+        return WebSocketEventType.ISSUE_DELETED
+
+    def get_body(self) -> dict[str, Any]:
+        return {
+            "volume_id": self.volume_id,
+            "issue_id": self.issue_id,
+        }
 
 
 # region StartType Handling

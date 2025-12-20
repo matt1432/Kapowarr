@@ -68,7 +68,15 @@ from backend.implementations.matching import _match_title, file_importing_filter
 from backend.implementations.root_folders import RootFolders
 from backend.internals.db import commit, get_db
 from backend.internals.db_models import FilesDB, GeneralFilesDB
-from backend.internals.server import WebSocket
+from backend.internals.server import (
+    DownloadedStatusEvent,
+    IssueDeleteEvent,
+    IssueUpdateEvent,
+    TaskStatusEvent,
+    VolumeDeleteEvent,
+    VolumeUpdateEvent,
+    WebSocket,
+)
 from backend.internals.settings import Settings
 
 ONE_DAY = timedelta(days=1)
@@ -256,7 +264,7 @@ class Issue:
             )
 
         if update_websocket:
-            WebSocket().send_issue_updated(self, called_from)
+            WebSocket().emit(IssueUpdateEvent(self, called_from))
 
         LOGGER.info(f"For issue {self.id}, changed: {formatted_data}")
         return
@@ -282,7 +290,7 @@ class Issue:
         FilesDB.delete_issue_linked_files(self.id)
         get_db().execute("DELETE FROM issues WHERE id = ?;", (self.id,))
 
-        WebSocket().send_issue_deleted(data.volume_id, self.id)
+        WebSocket().emit(IssueDeleteEvent(data.volume_id, self.id))
         return
 
 
@@ -660,7 +668,7 @@ class Volume:
             )
 
         if update_websocket:
-            WebSocket().send_volume_updated(self, called_from)
+            WebSocket().emit(VolumeUpdateEvent(self, called_from))
 
         return
 
@@ -906,7 +914,7 @@ class Volume:
         # ON DELETE CASCADE will take care of issues
         get_db().execute("DELETE FROM volumes WHERE id = ?", (self.id,))
 
-        WebSocket().send_volume_deleted(self.id)
+        WebSocket().emit(VolumeDeleteEvent(self.id))
 
         return
 
@@ -1574,15 +1582,19 @@ def scan_files(
         if not filepath_filter and (
             deleted_downloaded_issues or newly_downloaded_issues
         ):
-            WebSocket().update_downloaded_status(
-                volume_id,
-                not_downloaded_issues=deleted_downloaded_issues,
-                downloaded_issues=newly_downloaded_issues,
+            WebSocket().emit(
+                DownloadedStatusEvent(
+                    volume_id,
+                    not_downloaded_issues=deleted_downloaded_issues,
+                    downloaded_issues=newly_downloaded_issues,
+                )
             )
 
         elif filepath_filter and newly_downloaded_issues:
-            WebSocket().update_downloaded_status(
-                volume_id, downloaded_issues=newly_downloaded_issues
+            WebSocket().emit(
+                DownloadedStatusEvent(
+                    volume_id, downloaded_issues=newly_downloaded_issues
+                )
             )
 
     # Delete bindings for general files that aren't in new bindings
@@ -2003,8 +2015,10 @@ def refresh_and_scan(
                 for idx, _ in enumerate(
                     pool.istarmap_unordered(scan_files, v_ids)
                 ):
-                    ws.update_task_status(
-                        message=f"Scanned files for volume {idx + 1}/{total_count}"
+                    ws.emit(
+                        TaskStatusEvent(
+                            f"Scanned files for volume {idx + 1}/{total_count}"
+                        )
                     )
 
             else:
@@ -2059,8 +2073,10 @@ def delete_issue_file(file_id: int) -> None:
     )
 
     if volume_id:
-        WebSocket().update_downloaded_status(
-            volume_id, not_downloaded_issues=not_downloaded_issues
+        WebSocket().emit(
+            DownloadedStatusEvent(
+                volume_id, not_downloaded_issues=not_downloaded_issues
+            )
         )
 
     if unmonitor_deleted_issues:
