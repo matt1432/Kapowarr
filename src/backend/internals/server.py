@@ -581,7 +581,7 @@ class VolumeUpdateEvent(WebSocketEvent):
     "A change in a volume"
 
     def __init__(self, volume: Volume, called_from: str = "") -> None:
-        self.volume = volume.get_public_keys()
+        self.volume = volume.get_public_data()
         self.called_from = called_from
         return
 

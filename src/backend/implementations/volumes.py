@@ -19,7 +19,6 @@ from aiohttp import ClientConnectorError
 from bs4 import BeautifulSoup
 
 from backend.base.custom_exceptions import (
-    InvalidKey,
     InvalidKeyValue,
     IssueNotFound,
     KeyNotFound,
@@ -29,6 +28,7 @@ from backend.base.custom_exceptions import (
     VolumeNotFound,
 )
 from backend.base.definitions import (
+    BaseEnum,
     Constants,
     FileData,
     GeneralFileData,
@@ -293,34 +293,40 @@ class Issue:
 
 # region Volume
 class Volume:
-    def __init__(self, id: int, check_existence: bool = False) -> None:
-        """Create instance of Volume.
+    def __init__(self, volume_id: int, check_existence: bool = False) -> None:
+        """Create an instance.
 
         Args:
-            id (int): The ID of the volume.
-            check_existence (bool, optional): Check if volume exists, based on ID.
+            volume_id (int): The ID of the volume.
+            check_existence (bool, optional): Check whether the volume exists
+                based on its ID.
                 Defaults to False.
 
         Raises:
-            VolumeNotFound: The volume was not found.
-                Can only be raised when check_existence is `True`.
+            VolumeNotFound: The volume was not found. Can only be raised when
+                check_existence is `True`.
         """
-        self.id = id
+        self.id = volume_id
 
         if not check_existence:
             return
 
-        volume_id = (
+        _volume_id = (
             get_db()
             .execute("SELECT id FROM volumes WHERE id = ? LIMIT 1;", (self.id,))
             .fetchone()
         )
 
-        if volume_id is None:
-            raise VolumeNotFound(id)
+        if _volume_id is None:
+            raise VolumeNotFound(volume_id)
         return
 
     def get_data(self) -> VolumeData:
+        """Get data about the volume.
+
+        Returns:
+            VolumeData: The data.
+        """
         data = (
             get_db()
             .execute(
@@ -344,18 +350,15 @@ class Volume:
             or {}
         )
 
-        return VolumeData(
-            **{
-                **data,
-                "special_version": SpecialVersion(data["special_version"]),
-            }
-        )
+        data["special_version"] = SpecialVersion(data["special_version"])
 
-    def get_public_keys(self) -> dict:
+        return VolumeData(**data)
+
+    def get_public_data(self) -> dict[str, Any]:
         """Get data about the volume for the public to see (the API).
 
         Returns:
-            dict: The data.
+            dict[str, Any]: The data.
         """
         volume_info = (
             get_db()
@@ -404,10 +407,12 @@ class Volume:
             .fetchonedict()
             or {}
         )
+
         volume_info["volume_folder"] = relpath(
             volume_info["folder"], volume_info["root_folder_path"]
         )
         del volume_info["root_folder_path"]
+
         volume_info["issues"] = [i.todict() for i in self.get_issues()]
         volume_info["general_files"] = self.get_general_files()
 
@@ -415,6 +420,8 @@ class Volume:
 
         return volume_info
 
+    # Alias, better in one-liners
+    # vd = Volume Data
     @property
     def vd(self) -> VolumeData:
         return self.get_data()
@@ -483,14 +490,47 @@ class Volume:
         return [MarvelIssueMetadata(**mi) for mi in marvel_issues]
 
     def get_issue(self, issue_id: int) -> Issue:
-        return Issue(issue_id)
+        """Get an issue from the volume based on its issue ID. It's checked that
+        the issue exists and is part of the volume.
+
+        Args:
+            issue_id (int): The ID of the issue.
+
+        Raises:
+            IssueNotFound: Issue doesn't exist or isn't part of this volume.
+
+        Returns:
+            Issue: The issue instance.
+        """
+        issue = Issue(issue_id, check_existence=True)
+        if issue.get_data().volume_id != self.id:
+            raise IssueNotFound(issue_id)
+        return issue
+
+    def get_issue_from_number(self, calculated_issue_number: float) -> Issue:
+        """Get an issue from the volume based on its calculated issue number.
+        It's checked that the issue exists and is part of the volume.
+
+        Args:
+            calculated_issue_number (float): The calculated issue number of the
+                issue.
+
+        Raises:
+            IssueNotFound: Issue doesn't exist or isn't part of this volume.
+
+        Returns:
+            Issue: The issue instance.
+        """
+        return Issue.from_volume_and_calc_number(
+            self.id, calculated_issue_number
+        )
 
     def get_issues(self, _skip_files: bool = False) -> list[IssueData]:
-        """Get list of issues that are in the volume.
+        """Get a list of the issues that are in the volume.
 
         Args:
             _skip_files (bool, optional): Don't fetch the files matched to
-            each issue. Saves quite a bit of time.
+                each issue. Saves quite a bit of time.
                 Defaults to False.
 
         Returns:
@@ -631,6 +671,54 @@ class Volume:
         """
         return GeneralFilesDB.fetch(self.id)
 
+    def __format_value(self, key: str, value: Any, from_public: bool) -> Any:
+        """Check whether the value of an attribute is allowed and convert if
+        needed.
+
+        Args:
+            key (str): Key of attribute.
+            value (Any): Value of attribute.
+            from_public (bool): If True, only allow attributes to be changed
+                that are allowed to be changed by the user.
+
+        Raises:
+            KeyNotFound: Key doesn't exist or can't be changed.
+            InvalidKeyValue: Value of the key is not allowed.
+
+        Returns:
+            Any: (Converted) Attribute value.
+        """
+        if from_public:
+            key_collection = (
+                "monitored",
+                "monitor_new_issues",
+                "special_version",
+                "special_version_lockedlibgen_series_id",
+                "marvel_id",
+            )
+
+        else:
+            key_collection = VolumeData.__annotations__.keys()
+
+        # Confirm that key exists
+        if key not in key_collection:
+            raise KeyNotFound(key)
+
+        key_data = VolumeData.__dataclass_fields__[key]
+
+        if issubclass(key_data.type, BaseEnum):
+            # Convert string to Enum value
+            try:
+                value = key_data.type(value)
+            except ValueError:
+                raise InvalidKeyValue(key, value)
+
+        # Confirm data type of submitted value
+        if not isinstance(value, key_data.type):
+            raise InvalidKeyValue(key, value)
+
+        return value
+
     def update(
         self,
         data: Mapping[str, Any],
@@ -638,47 +726,51 @@ class Volume:
         called_from: str = "",
         update_websocket=True,
     ) -> None:
-        allowed_keys: Sequence[str]
+        """Change attributes of the volume, in a `dict.update()` type of way.
 
-        if from_public:
-            allowed_keys = (
-                "monitored",
-                "monitor_new_issues",
-                "special_version",
-                "special_version_locked",
-                "libgen_series_id",
-                "marvel_id",
-            )
-        else:
-            allowed_keys = (*VolumeData.__annotations__, "cover")
+        Args:
+            data (Mapping[str, Any]): The keys and their new values.
 
-        for key in data:
-            if key not in allowed_keys:
-                raise InvalidKey(key)
+            from_public (bool, optional): If True, only allow attributes to be
+                changed that are allowed to be changed by the user.
+                Defaults to False.
+
+        Raises:
+            KeyNotFound: Key doesn't exist or can't be changed.
+            InvalidKeyValue: Value of the key is not allowed.
+        """
+        formatted_data = {
+            key: self.__format_value(key, value, from_public)
+            for key, value in data.items()
+        }
 
         cursor = get_db()
-        for key, value in data.items():
+        for key, value in formatted_data.items():
             cursor.execute(
                 f"UPDATE volumes SET {key} = ? WHERE id = ?;", (value, self.id)
             )
+
+        LOGGER.info(f"For volume {self.id}, changed: {formatted_data}")
 
         if update_websocket:
             WebSocket().emit(VolumeUpdateEvent(self, called_from))
 
         return
 
-    def __setitem__(self, __name: str, __value: Any) -> None:
-        """Change an aspect of the issue.
+    def update_cover(self, cover: bytes) -> None:
+        """Change the cover of the volume.
 
         Args:
-            __name (str): The key of the aspect.
-            __value (Any): The new value of the aspect.
-
-        Raises:
-            InvalidKey: Key is not allowed.
-            InvalidKeyValue: Value of key is not allowed.
+            cover (bytes): The new cover image.
         """
-        self.update({__name: __value})
+        get_db().execute(
+            """
+            UPDATE volumes_covers
+            SET cover = ?
+            WHERE volume_id = ?;
+            """,
+            (cover, self.id),
+        )
         return
 
     def apply_monitor_scheme(self, monitoring_scheme: MonitorScheme) -> None:
@@ -755,65 +847,73 @@ class Volume:
         )
 
     def change_root_folder(self, new_root_folder_id: int) -> None:
-        """Change the root folder of the volume.
+        """Change the root folder of the volume. Updates the path in the
+        database, creates the new folder (if needed) and moves the files (if any).
 
         Args:
             new_root_folder_id (int): The root folder ID of the new root folder.
         """
-        vd = self.get_data()
-        if vd.root_folder == new_root_folder_id:
-            # Reset volume name if root folder is the same
-            self.change_volume_folder(None)
+        volume_data = self.get_data()
+        if volume_data.root_folder == new_root_folder_id:
             return
 
         root_folders = RootFolders()
-        current_root_folder = root_folders.get_one(vd.root_folder)
-        new_root_folder = root_folders.get_one(new_root_folder_id)
+        current_root_folder = root_folders[volume_data.root_folder]
+        new_root_folder = root_folders[new_root_folder_id]
 
         LOGGER.info(
-            f"Changing root folder of volume {self.id} "
-            f"from {current_root_folder.folder} to {new_root_folder.folder}"
+            "Changing root folder of volume %d from %s to %s",
+            self.id,
+            current_root_folder,
+            new_root_folder,
         )
 
+        # Move files
         file_changes = change_basefolder(
             (f["filepath"] for f in self.get_all_files()),
-            current_root_folder.folder,
-            new_root_folder.folder,
+            current_root_folder,
+            new_root_folder,
         )
         for old_name, new_name in file_changes.items():
             rename_file(old_name, new_name)
-        if isdir(vd.folder):
-            delete_empty_child_folders(vd.folder)
+        if isdir(volume_data.folder):
+            delete_empty_child_folders(volume_data.folder)
 
+        # Update filepaths in database
         FilesDB.update_filepaths(file_changes.keys(), file_changes.values())
 
-        self["root_folder"] = new_root_folder.id
-        self["folder"] = new_folder = change_basefolder(
-            (vd.folder,), current_root_folder.folder, new_root_folder.folder
-        )[vd.folder]
+        # Update volume data in database
+        new_folder = change_basefolder(
+            (volume_data.folder,), current_root_folder, new_root_folder
+        )[volume_data.folder]
+        self.update({"root_folder": new_root_folder_id, "folder": new_folder})
 
-        if not self.__volume_folder_used_by_other_volume(vd.folder):
+        if not self.__volume_folder_used_by_other_volume(volume_data.folder):
             # Current volume folder is not also used by another volume,
             # so we can delete it if empty.
-            delete_empty_parent_folders(vd.folder, current_root_folder.folder)
+            delete_empty_parent_folders(volume_data.folder, current_root_folder)
 
         if Settings().sv.create_empty_volume_folders:
             create_folder(new_folder)
 
         return
 
-    def change_volume_folder(self, new_volume_folder: str | None) -> None:
-        """Change the volume folder of the volume.
+    def change_volume_folder(
+        self,
+        new_volume_folder: str | None,
+    ) -> None:
+        """Change the volume folder of the volume. Updates the path in the
+        database, creates the new folder (if needed) and moves the files (if any).
 
         Args:
-            new_volume_folder (str | None): The new folder,
-            or `None` if the default folder should be generated and used.
+            new_volume_folder (Union[str, None]): The new folder, or `None` if
+                the default folder should be generated and used.
         """
         from backend.implementations.naming import generate_volume_folder_path
 
-        vd = self.get_data()
-        current_volume_folder = vd.folder
-        root_folder = RootFolders()[vd.root_folder]
+        volume_data = self.get_data()
+        root_folder = RootFolders()[volume_data.root_folder]
+        current_volume_folder = volume_data.folder
         new_volume_folder = generate_volume_folder_path(
             root_folder, new_volume_folder or self.id
         )
@@ -822,12 +922,13 @@ class Volume:
             return
 
         LOGGER.info(
-            f"Moving volume folder from {current_volume_folder} to {new_volume_folder}"
+            "Changing volume folder of volume %d from %s to %s",
+            self.id,
+            current_volume_folder,
+            new_volume_folder,
         )
 
-        self["custom_folder"] = new_volume_folder is not None
-        self["folder"] = new_volume_folder
-
+        # Move files
         file_changes = change_basefolder(
             (f["filepath"] for f in self.get_all_files()),
             current_volume_folder,
@@ -835,30 +936,39 @@ class Volume:
         )
         for old_name, new_name in file_changes.items():
             rename_file(old_name, new_name)
-        delete_empty_child_folders(current_volume_folder)
+        if isdir(current_volume_folder):
+            delete_empty_child_folders(current_volume_folder)
 
+        # Update filepaths in database
         FilesDB.update_filepaths(file_changes.keys(), file_changes.values())
 
-        create_empty_volume_folders = Settings().sv.create_empty_volume_folders
-        if create_empty_volume_folders:
+        # Update volume data in database
+        self.update(
+            {
+                "custom_folder": new_volume_folder is not None,
+                "folder": new_volume_folder,
+            }
+        )
+
+        if Settings().sv.create_empty_volume_folders:
             create_folder(new_volume_folder)
 
-        if (
-            create_empty_volume_folders or file_changes
-        ) and folder_is_inside_folder(new_volume_folder, current_volume_folder):
-            # New folder is parent of current folder, so delete up to new
-            # folder.
+        # Delete old folder if possible
+        if isdir(new_volume_folder) and folder_is_inside_folder(
+            new_volume_folder, current_volume_folder
+        ):
+            # New folder is parent of current folder,
+            # so delete up to new folder.
             delete_empty_parent_folders(
                 current_volume_folder, new_volume_folder
             )
 
-        else:
-            if not self.__volume_folder_used_by_other_volume(
-                current_volume_folder
-            ):
-                # Current volume folder is not also used by another volume,
-                # so we can delete it if empty.
-                delete_empty_parent_folders(current_volume_folder, root_folder)
+        elif not self.__volume_folder_used_by_other_volume(
+            current_volume_folder
+        ):
+            # Current volume folder is not also used by another volume,
+            # so we can delete it if empty.
+            delete_empty_parent_folders(current_volume_folder, root_folder)
 
         return
 
@@ -867,18 +977,18 @@ class Volume:
 
         Args:
             delete_folder (bool, optional): Also delete the volume folder and
-            it's contents.
+                its contents.
                 Defaults to False.
 
         Raises:
-            TaskForVolumeRunning: There is a task in the queue for the volume.
-            VolumeDownloadedFor: There is a download in the queue for the volume.
+            TaskForVolumeRunning: There is a task queued for the volume.
+            VolumeDownloadedFor: There is a download queued for the volume.
         """
         from backend.features.download_queue import DownloadHandler
         from backend.features.tasks import TaskHandler
 
         LOGGER.info(
-            f"Deleting volume {self.id} with delete_folder set to {delete_folder}"
+            "Deleting volume %d with delete_folder=%s", self.id, delete_folder
         )
 
         # Check if there is no task running for the volume
@@ -886,20 +996,18 @@ class Volume:
             raise TaskForVolumeRunning(self.id)
 
         # Check if nothing is downloading for the volume
-        if any(entry.volume_id == self.id for entry in DownloadHandler.queue):
+        if DownloadHandler().download_for_volume_queued(self.id):
             raise VolumeDownloadedFor(self.id)
 
-        if delete_folder:
-            vd = self.get_data()
+        volume_data = self.get_data()
+        if delete_folder and exists(volume_data.folder):
+            for f in self.get_all_files():
+                delete_file_folder(f["filepath"])
 
-            if exists(vd.folder):
-                for f in self.get_all_files():
-                    delete_file_folder(f["filepath"])
-
-                delete_empty_child_folders(vd.folder)
-                delete_empty_parent_folders(
-                    vd.folder, RootFolders()[vd.root_folder]
-                )
+            delete_empty_child_folders(volume_data.folder)
+            delete_empty_parent_folders(
+                volume_data.folder, RootFolders()[volume_data.root_folder]
+            )
 
         # Delete file entries
         # ON DELETE CASCADE will take care of issues_files

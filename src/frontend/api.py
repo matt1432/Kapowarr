@@ -857,7 +857,7 @@ def api_volumes() -> ApiReturn | None:
             sv,
             auto_search,
         )
-        volume_info = library.get_volume(volume_id).get_public_keys()
+        volume_info = library.get_volume(volume_id).get_public_data()
         return return_api(volume_info, code=201)
 
 
@@ -876,7 +876,7 @@ def api_volume(id: int) -> ApiReturn | None:
     volume = library.get_volume(id)
 
     if request.method == "GET":
-        volume_info = volume.get_public_keys()
+        volume_info = volume.get_public_data()
         return return_api(volume_info)
 
     elif request.method == "PUT":

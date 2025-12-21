@@ -48,7 +48,7 @@ from backend.implementations.external_clients import ExternalClients
 from backend.implementations.naming import generate_issue_name
 from backend.implementations.remote_mapping import RemoteMappings
 from backend.implementations.torrent_clients.qBittorrent import qBittorrent
-from backend.implementations.volumes import Issue, Volume
+from backend.implementations.volumes import Volume
 from backend.internals.db import get_db
 from backend.internals.server import QueueStatusEvent, WebSocket
 from backend.internals.settings import Settings
@@ -288,14 +288,12 @@ class BaseDirectDownload(Download):
         self._filename_body = ""
         try:
             if isinstance(covered_issues, float):
-                self._issue_id = Issue.from_volume_and_calc_number(
-                    volume_id, covered_issues
-                ).id
+                self._issue_id = volume.get_issue_from_number(covered_issues).id
 
             if settings.rename_downloaded_files:
                 self._filename_body = generate_issue_name(
                     volume_id,
-                    volume.get_data().special_version,
+                    volume.vd.special_version,
                     covered_issues,
                     FileExtraInfo(
                         releaser=releaser,
@@ -743,14 +741,12 @@ class MegaDownload(BaseDirectDownload):
         self._filename_body = ""
         try:
             if isinstance(covered_issues, float):
-                self._issue_id = Issue.from_volume_and_calc_number(
-                    volume_id, covered_issues
-                ).id
+                self._issue_id = volume.get_issue_from_number(covered_issues).id
 
             if settings.rename_downloaded_files:
                 self._filename_body = generate_issue_name(
                     volume_id,
-                    volume.get_data().special_version,
+                    volume.vd.special_version,
                     covered_issues,
                     FileExtraInfo(
                         releaser=releaser,
@@ -861,6 +857,7 @@ class TorrentDownload(ExternalDownload, BaseDirectDownload):
         LOGGER.debug("Creating download: %s", download_link)
 
         settings = Settings().sv
+        volume = Volume(volume_id)
 
         self._download_link = self._pure_link = download_link
         self._volume_id = volume_id
@@ -901,9 +898,7 @@ class TorrentDownload(ExternalDownload, BaseDirectDownload):
 
         try:
             if isinstance(covered_issues, float):
-                self._issue_id = Issue.from_volume_and_calc_number(
-                    volume_id, covered_issues
-                ).id
+                self._issue_id = volume.get_issue_from_number(covered_issues).id
 
         except IssueNotFound as e:
             if not forced_match:
@@ -938,7 +933,7 @@ class TorrentDownload(ExternalDownload, BaseDirectDownload):
             try:
                 self._filename_body = generate_issue_name(
                     volume_id,
-                    Volume(volume_id).get_data().special_version,
+                    volume.vd.special_version,
                     covered_issues,
                     FileExtraInfo(
                         releaser=releaser,
