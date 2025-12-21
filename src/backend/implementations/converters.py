@@ -29,9 +29,10 @@ from backend.base.files import (
 )
 from backend.base.helpers import run_rar, try_rar
 from backend.base.logging import LOGGER
+from backend.implementations.file_matching import scan_files
 from backend.implementations.matching import folder_extraction_filter
 from backend.implementations.naming import mass_rename
-from backend.implementations.volumes import Volume, scan_files
+from backend.implementations.volumes import Volume
 from backend.internals.db_models import FilesDB
 from backend.internals.settings import Settings
 
