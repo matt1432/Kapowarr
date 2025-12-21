@@ -282,6 +282,11 @@ class Issue:
 
     def delete(self) -> None:
         """Delete the issue from the database"""
+        LOGGER.debug(
+            "Deleting issue %d with CV ID %d",
+            self.id,
+            self.get_data().comicvine_id,
+        )
         data = self.get_data()
 
         FilesDB.delete_issue_linked_files(self.id)
@@ -1435,7 +1440,7 @@ class Library:
 
 # region Scanning and updating
 def determine_special_version(volume_id: int) -> SpecialVersion:
-    """Determine if a volume is a special version.
+    """Determine what Special Version a volume is, if any.
 
     Args:
         volume_id (int): The ID of the volume to determine for.
@@ -1461,21 +1466,15 @@ def determine_special_version(volume_id: int) -> SpecialVersion:
         if hc_regex.search(volume_data.title):
             return SpecialVersion.HARD_COVER
 
-        if (issues[0].title or "").lower() == "omnibus":
+        issue_title = (issues[0].title or "").lower().replace(" ", "")
+
+        if issue_title == "omnibus":
             return SpecialVersion.OMNIBUS
 
-        if (issues[0].title or "").lower().replace(" ", "") in (
-            "hc",
-            "hard-cover",
-            "hardcover",
-        ):
+        if issue_title in ("hc", "hard-cover", "hardcover"):
             return SpecialVersion.HARD_COVER
 
-        if (issues[0].title or "").lower().replace(" ", "") in (
-            "os",
-            "one-shot",
-            "oneshot",
-        ):
+        if issue_title in ("os", "one-shot", "oneshot"):
             return SpecialVersion.ONE_SHOT
 
     if "annual" in volume_data.title.lower():
@@ -1489,6 +1488,7 @@ def determine_special_version(volume_id: int) -> SpecialVersion:
         # "Also available as one shot")
         first_sentence = split_regex.split(volume_data.description)[0]
         first_sentence = remove_link_regex.sub("", first_sentence)
+
         if omnibus_regex.search(first_sentence):
             return SpecialVersion.OMNIBUS
 
@@ -1499,6 +1499,10 @@ def determine_special_version(volume_id: int) -> SpecialVersion:
             return SpecialVersion.HARD_COVER
 
     if one_issue and issues[0].date:
+        # The volume only has one issue. If the issue was released in the last
+        # month, then we'll assume it's just a new volume that has only released
+        # one issue up to this point. If the issue was released more than a
+        # month ago, then we'll assume it's a TPB.
         thirty_plus_days_ago = (
             datetime.now() - datetime.strptime(issues[0].date, "%Y-%m-%d")
             > THIRTY_DAYS
@@ -1562,11 +1566,11 @@ def refresh_and_scan(
         the last 24 hours or that still have the same amount of issues.
             Defaults to True.
     """
-    cursor = get_db()
-
     current_time = datetime.now()
     one_day_ago = current_time - ONE_DAY
     thirty_days_ago = current_time - THIRTY_DAYS
+
+    cursor = get_db()
     if volume_id:
         cursor.execute(
             """
@@ -1578,13 +1582,6 @@ def refresh_and_scan(
             (volume_id,),
         )
 
-    elif not allow_skipping:
-        cursor.execute("""
-            SELECT comicvine_id, id, last_cv_fetch, marvel_id, special_version
-            FROM volumes
-            ORDER BY last_cv_fetch ASC;
-            """)
-
     else:
         cursor.execute(
             """
@@ -1593,7 +1590,11 @@ def refresh_and_scan(
             WHERE last_cv_fetch <= ?
             ORDER BY last_cv_fetch ASC;
             """,
-            (one_day_ago.timestamp(),),
+            (
+                one_day_ago.timestamp()
+                if allow_skipping
+                else current_time.timestamp(),
+            ),
         )
 
     cv_to_id_fetch: dict[int, tuple[int, int]] = {}
@@ -1648,6 +1649,7 @@ def refresh_and_scan(
             v
             for v in volume_datas
             if cv_id_to_issue_count[v["comicvine_id"]] != v["issue_count"]
+            # Do a fetch anyway if it hasn't been done for 30 days
             or cv_to_id_fetch[v["comicvine_id"]][1]
             <= thirty_days_ago.timestamp()
         ]
@@ -1803,7 +1805,7 @@ def refresh_and_scan(
 
     commit()
 
-    # Delete issues from DB that aren't found in CV response
+    # Delete issues from DB that aren't found in response
     volume_issues_fetched: dict[int, set[int]] = {}
     for isd in issue_datas:
         (
@@ -1819,8 +1821,8 @@ def refresh_and_scan(
         ):
             continue
 
-        # All issues of the volume have been fetched (not guaranteed because of
-        # CV API rate limit).
+        # All issues of the volume have been fetched, which is not guaranteed
+        # because of rate limits.
         issue_cv_to_id = dict(
             cursor.execute(
                 """
@@ -1835,10 +1837,7 @@ def refresh_and_scan(
         )
         for issue_cv, issue_id in issue_cv_to_id.items():
             if issue_cv not in volume_issues_fetched[vd["comicvine_id"]]:
-                # Issue is in database but not in CV, so remove
-                LOGGER.debug(
-                    f"Deleting issue with ID {issue_id} and CV ID {issue_cv}"
-                )
+                # Issue is in database but not in response, so remove
                 Issue(issue_id).delete()
                 commit()
 
@@ -1935,7 +1934,7 @@ def delete_issue_file(file_id: int) -> None:
         )
         SELECT issue_id
         FROM matched_file_counts
-        WHERE matched_file_count = 1
+        WHERE matched_file_count = 1;
         """,
             (file_id,),
         )
