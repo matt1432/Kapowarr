@@ -65,9 +65,9 @@ from backend.implementations.blocklist import (
 )
 from backend.implementations.comicvine import ComicVine
 from backend.implementations.conversion import (
-    FileConversionHandler,
     preview_mass_convert,
 )
+from backend.implementations.converters import ConvertersManager
 from backend.implementations.credentials import Credentials
 from backend.implementations.external_clients import ExternalClients
 from backend.implementations.matching import (
@@ -564,7 +564,7 @@ def api_settings_api_key() -> ApiReturn:
 @error_handler
 @auth
 def api_settings_available_formats() -> ApiReturn:
-    result = list(FileConversionHandler.get_available_formats())
+    result = list(ConvertersManager.get_available_formats())
     return return_api(result)
 
 

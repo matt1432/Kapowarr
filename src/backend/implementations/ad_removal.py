@@ -6,7 +6,7 @@ from zipfile import ZipFile, ZipInfo
 from backend.base.definitions import FileConstants
 from backend.base.files import delete_file_folder, generate_archive_folder
 from backend.base.logging import LOGGER
-from backend.implementations.converters import CBRtoCBZ, CBZtoCBR
+from backend.implementations.converters import cbr_to_cbz, cbz_to_cbr
 
 
 def get_files_prefix(files: list[str]) -> str:
@@ -92,14 +92,14 @@ def remove_ads(file: str) -> None:
         return
 
     if is_rar:
-        CBRtoCBZ.convert(file)
+        cbr_to_cbz(file)
         file = file.replace(".cbr", ".cbz")
 
     ads = get_ad_filenames(file)
 
     if len(ads) == 0:
         if is_rar:
-            CBZtoCBR.convert(file)
+            cbz_to_cbr(file)
         return
 
     archive_folder = generate_archive_folder(dirname(file), file)
@@ -116,6 +116,6 @@ def remove_ads(file: str) -> None:
     delete_file_folder(archive_folder)
 
     if is_rar:
-        CBZtoCBR.convert(file)
+        cbz_to_cbr(file)
 
     LOGGER.info(f"Removed ads: {ads}")

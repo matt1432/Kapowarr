@@ -15,7 +15,7 @@ from backend.base.files import (
 )
 from backend.base.logging import LOGGER
 from backend.implementations.ad_removal import get_files_prefix
-from backend.implementations.converters import CBRtoCBZ, CBZtoCBR
+from backend.implementations.converters import cbr_to_cbz, cbz_to_cbr
 from backend.implementations.volumes import Volume
 from backend.internals.db import DBConnection
 from backend.internals.db_models import FilesDB
@@ -33,7 +33,7 @@ def _extract_files(file: str) -> list[str]:
 
     is_rar = file.endswith(".cbr")
     if is_rar:
-        CBRtoCBZ.convert(file)
+        cbr_to_cbz(file)
         file = file.replace(".cbr", ".cbz")
 
     with ZipFile(file, "r") as zip:
@@ -44,7 +44,7 @@ def _extract_files(file: str) -> list[str]:
     )
 
     if is_rar:
-        CBZtoCBR.convert(file)
+        cbz_to_cbr(file)
 
     return resulting_files
 
@@ -200,7 +200,7 @@ def update_issue_pages(file_id: int, new_pages: list[ThumbnailData]) -> None:
         return
 
     if is_rar:
-        CBRtoCBZ.convert(file)
+        cbr_to_cbz(file)
         file = file.replace(".cbr", ".cbz")
 
     archive_folder = generate_archive_folder(dirname(file), file)
@@ -226,5 +226,5 @@ def update_issue_pages(file_id: int, new_pages: list[ThumbnailData]) -> None:
     delete_file_folder(dirname(new_pages[0]["filepath"]))
 
     if is_rar:
-        CBZtoCBR.convert(file)
+        cbz_to_cbr(file)
     return

@@ -24,27 +24,25 @@ class FlareSolverr:
 
     @staticmethod
     def __api_request(
-        base_url: str,
-        session: Session,
-        data: dict[str, Any]
+        base_url: str, session: Session, data: dict[str, Any]
     ) -> dict[str, Any]:
         return session.post(
             base_url + Constants.FS_API_BASE,
             json=data,
-            headers={'Content-Type': 'application/json'}
+            headers={"Content-Type": "application/json"},
         ).json()
 
     @staticmethod
     async def __async_api_request(
-        base_url: str,
-        session: AsyncSession,
-        data: dict[str, Any]
+        base_url: str, session: AsyncSession, data: dict[str, Any]
     ) -> dict[str, Any]:
-        return await (await session.post(
-            base_url + Constants.FS_API_BASE,
-            json=data,
-            headers={'Content-Type': 'application/json'}
-        )).json()
+        return await (
+            await session.post(
+                base_url + Constants.FS_API_BASE,
+                json=data,
+                headers={"Content-Type": "application/json"},
+            )
+        ).json()
 
     @staticmethod
     def test_flaresolverr(base_url: str) -> bool:
@@ -136,33 +134,26 @@ class FlareSolverr:
 
             # Start session
             session_id = self.__api_request(
-                self.base_url, session,
-                {'cmd': 'sessions.create'}
+                self.base_url, session, {"cmd": "sessions.create"}
             )["session"]
 
             # Get result
             result = self.__api_request(
-                self.base_url, session,
-                {
-                    'cmd': 'request.get',
-                    'session': session_id,
-                    'url': url
-                }
+                self.base_url,
+                session,
+                {"cmd": "request.get", "session": session_id, "url": url},
             )["solution"]
 
             # Close session
             self.__api_request(
-                self.base_url, session,
-                {
-                    'cmd': 'sessions.destroy',
-                    'session': session_id
-                }
+                self.base_url,
+                session,
+                {"cmd": "sessions.destroy", "session": session_id},
             )
 
             self.ua_mapping[url] = result["userAgent"]
             self.cookie_mapping[url] = {
-                cookie["name"]: cookie["value"]
-                for cookie in result["cookies"]
+                cookie["name"]: cookie["value"] for cookie in result["cookies"]
             }
 
         return result
@@ -198,28 +189,26 @@ class FlareSolverr:
             return
 
         # Start session
-        session_id = (await self.__async_api_request(
-            self.base_url, session,
-            {'cmd': 'sessions.create'}
-        ))["session"]
+        session_id = (
+            await self.__async_api_request(
+                self.base_url, session, {"cmd": "sessions.create"}
+            )
+        )["session"]
 
         # Get result
-        result = (await self.__async_api_request(
-            self.base_url, session,
-            {
-                'cmd': 'request.get',
-                'session': session_id,
-                'url': url
-            }
-        ))["solution"]
+        result = (
+            await self.__async_api_request(
+                self.base_url,
+                session,
+                {"cmd": "request.get", "session": session_id, "url": url},
+            )
+        )["solution"]
 
         # Close session
         await self.__async_api_request(
-            self.base_url, session,
-            {
-                'cmd': 'sessions.destroy',
-                'session': session_id
-            }
+            self.base_url,
+            session,
+            {"cmd": "sessions.destroy", "session": session_id},
         )
 
         self.ua_mapping[url] = result["userAgent"]

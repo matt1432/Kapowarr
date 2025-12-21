@@ -21,6 +21,7 @@ from hashlib import pbkdf2_hmac
 from multiprocessing.pool import Pool
 from os import cpu_count, sep
 from os.path import basename, dirname
+from subprocess import run
 from sys import version_info
 from threading import current_thread
 from typing import (
@@ -45,6 +46,7 @@ from backend.base.logging import LOGGER, get_log_filepath
 if TYPE_CHECKING:
     from multiprocessing import SimpleQueue
     from multiprocessing.pool import IMapIterator
+    from subprocess import CompletedProcess
 
 
 # region System
@@ -55,6 +57,27 @@ def current_thread_id() -> int:
         int: The ID.
     """
     return current_thread().native_id or -1
+
+
+def try_rar() -> bool:
+    try:
+        run(["rar", "-?"], capture_output=True, text=True)
+    except FileNotFoundError as exc:
+        LOGGER.error(f"RAR executable could not be found.\n{exc}")
+        return False
+    return True
+
+
+def run_rar(args: list[str]) -> CompletedProcess[str]:
+    """Run rar executable from path.
+
+    Args:
+        args (List[str]): The arguments to give to the executable.
+
+    Returns:
+        CompletedProcess[str]: The result of the process.
+    """
+    return run(["rar", *args], capture_output=True, text=True)
 
 
 # region Python
