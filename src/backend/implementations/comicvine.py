@@ -75,16 +75,17 @@ lists = {"ul", "ol"}
 
 
 def _clean_description(description: str, short: bool = False) -> str:
-    """Reduce size of description (written in html) to only essential
-    information.
+    """Reduce the size of the volume/issue description (written in html) to only
+    essential information. Removes images, lists (e.g. of authors), and fixes
+    links that have a relative URL.
 
     Args:
-        description (str): The description (written in html) to clean.
+        description (str): The description to clean.
         short (bool, optional): Only remove images and fix links.
             Defaults to False.
 
     Returns:
-        str: The cleaned description (written in html).
+        str: The cleaned description.
     """
     if not description:
         return description
@@ -97,29 +98,24 @@ def _clean_description(description: str, short: bool = False) -> str:
 
     if not short:
         # Remove everything after the first title with list
-        removed_elements: list[Tag] = []
+        removed_elements = []
         for el in soup:
             if not isinstance(el, Tag):
                 continue
-            if el.name is None:
+
+            elif el.name is None:
                 continue
 
-            if removed_elements or el.name in headers:
+            elif removed_elements or el.name in headers:
                 removed_elements.append(el)
-                continue
 
-            if el.name in lists:
+            elif el.name in lists:
                 removed_elements.append(el)
                 prev_sib = el.previous_sibling
-                if (
-                    prev_sib is not None
-                    and isinstance(prev_sib, Tag)
-                    and prev_sib.text.endswith(":")
-                ):
+                if prev_sib is not None and prev_sib.text.endswith(":"):
                     removed_elements.append(prev_sib)
-                continue
 
-            if el.name == "p":
+            elif el.name == "p":
                 children = list(getattr(el, "children", []))
                 if 1 <= len(children) <= 2 and children[0].name in (
                     "b",
