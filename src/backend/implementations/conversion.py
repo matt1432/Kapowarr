@@ -104,6 +104,10 @@ def preview_mass_convert(
     return result
 
 
+def _trigger_conversion(conversion: ProposedConversion) -> list[str]:
+    return conversion.perform_conversion()
+
+
 def mass_convert(
     volume_id: int,
     issue_id: int | None = None,
@@ -141,6 +145,7 @@ def mass_convert(
     ):
         if proposed_convertion.target_format == "folder":
             resulting_files = proposed_convertion.perform_conversion()
+            FilesDB.delete_filepath(proposed_convertion.filepath)
             for filepath in resulting_files:
                 sub_conversion = ConvertersManager.select_converter(filepath)
                 if sub_conversion is not None:
@@ -161,16 +166,14 @@ def mass_convert(
             ws = WebSocket()
             ws.emit(TaskStatusEvent(f"Converted 0/{total_count}"))
             for idx, iter_result in enumerate(
-                pool.imap_unordered(
-                    lambda c: c.perform_conversion(), planned_conversions
-                )
+                pool.imap_unordered(_trigger_conversion, (planned_conversions))
             ):
                 result += iter_result
                 ws.emit(TaskStatusEvent(f"Converted {idx + 1}/{total_count}"))
 
         else:
             result += chain.from_iterable(
-                pool.map(lambda c: c.perform_conversion(), planned_conversions)
+                pool.map(_trigger_conversion, planned_conversions)
             )
 
     FilesDB.delete_filepaths(f.filepath for f in planned_conversions)

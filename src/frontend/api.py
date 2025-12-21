@@ -76,7 +76,7 @@ from backend.implementations.matching import (
 )
 from backend.implementations.naming import (
     generate_volume_folder_name,
-    preview_mass_rename,
+    preview_mass_rename_api,
 )
 from backend.implementations.remote_mapping import RemoteMappings
 from backend.implementations.root_folders import RootFolders
@@ -994,7 +994,7 @@ def api_issues(id: int) -> ApiReturn | None:
 @auth
 def api_rename(id: int) -> ApiReturn:
     library.get_volume(id)
-    result = preview_mass_rename(id, is_for_api=True)[0]
+    result = preview_mass_rename_api(id)[0]
     return return_api(result)
 
 
@@ -1003,7 +1003,7 @@ def api_rename(id: int) -> ApiReturn:
 @auth
 def api_rename_issue(id: int) -> ApiReturn:
     volume_id = library.get_issue(id).get_data().volume_id
-    result = preview_mass_rename(volume_id, id, is_for_api=True)[0]
+    result = preview_mass_rename_api(volume_id, id)[0]
     return return_api(result)
 
 

@@ -178,7 +178,7 @@ def move_torrent_to_dest(download: TorrentDownload) -> None:
 
     rename_files = Settings().sv.rename_downloaded_files
     if rename_files:
-        download.files += mass_rename(
+        download.files = mass_rename(
             download.volume_id, filepath_filter=download.files
         )
 
@@ -246,7 +246,7 @@ def copy_file_torrent(download: TorrentDownload) -> None:
 
     rename_files = Settings().sv.rename_downloaded_files
     if rename_files:
-        download.files += mass_rename(
+        download.files = mass_rename(
             download.volume_id, filepath_filter=download.files
         )
 

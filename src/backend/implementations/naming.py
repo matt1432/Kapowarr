@@ -7,6 +7,7 @@ from __future__ import annotations
 from os.path import abspath, basename, isdir, isfile, join, splitext
 from re import compile, findall
 from sys import platform
+from typing import TypedDict
 
 from backend.base.custom_exceptions import InvalidKeyValue
 from backend.base.definitions import (
@@ -749,7 +750,7 @@ def same_name_indexing(
     volume_folder: str, planned_renames: dict[str, str]
 ) -> dict[str, str]:
     """Add a number at the end the filenames if the suggested filename already
-    exists.
+    exists to avoid files with the same filename.
 
     Args:
         volume_folder (str): The volume folder that the files will be in.
@@ -757,8 +758,7 @@ def same_name_indexing(
         is before, value is after).
 
     Returns:
-        Dict[str, str]: The planned renamed, now updated with numbers i.c.o.
-        duplicate filenames.
+        Dict[str, str]: The planned renames, now updated with numbers if needed.
     """
     if not isdir(volume_folder):
         return planned_renames
@@ -774,15 +774,14 @@ def same_name_indexing(
         final_names.add(new_after)
         planned_renames[before] = new_after
 
-    return {k: v for k, v in planned_renames.items() if k != v}
+    return planned_renames
 
 
 def preview_mass_rename(
     volume_id: int,
     issue_id: int | None = None,
     filepath_filter: list[str] | None = None,
-    is_for_api: bool = False,
-) -> tuple[dict[str, str] | list[dict[str, str | int]], str | None]:
+) -> tuple[dict[str, str], str | None]:
     """Determine what the new filenames would be, if they aren't already
     following the format.
 
@@ -882,42 +881,63 @@ def preview_mass_rename(
             volume_folder, gen_filename_body + splitext(file)[1].lower()
         )
 
+        result[file] = suggested_name
         LOGGER.debug(f"Renaming: suggested filename: {suggested_name}")
         if file != suggested_name:
             LOGGER.debug("Renaming: added rename")
-            result[file] = suggested_name
 
     result = same_name_indexing(volume_folder, result)
-
-    if is_for_api:
-        if not issue_id:
-            issues = volume.get_issues()
-            result = [
-                {
-                    "id": next(
-                        (
-                            x
-                            for x in issues
-                            if x.calculated_issue_number
-                            == FilesDB.issues_covered(key)[0]
-                        ),
-                        issues[0],
-                    ).id,
-                    "existingPath": key,
-                    "newPath": result[key],
-                }
-                for key in result
-            ]
-        else:
-            result = [
-                {"id": issue_id, "existingPath": key, "newPath": result[key]}
-                for key in result
-            ]
 
     if volume_folder != volume.get_data().folder:
         return result, volume_folder
     else:
         return result, None
+
+
+class RenameItem(TypedDict):
+    id: int
+    existingPath: str
+    newPath: str
+
+
+def preview_mass_rename_api(
+    volume_id: int,
+    issue_id: int | None = None,
+    filepath_filter: list[str] | None = None,
+) -> tuple[list[RenameItem], str | None]:
+    all_namings, new_volume_folder = preview_mass_rename(
+        volume_id, issue_id, filepath_filter
+    )
+    renames = {
+        before: after
+        for before, after in all_namings.items()
+        if before != after
+    }
+    volume = Volume(volume_id)
+
+    if not issue_id:
+        issues = volume.get_issues()
+        return [
+            RenameItem(
+                id=next(
+                    (
+                        x
+                        for x in issues
+                        if x.calculated_issue_number
+                        == FilesDB.issues_covered(key)[0]
+                    ),
+                    issues[0],
+                ).id,
+                existingPath=key,
+                newPath=renames[key],
+            )
+            for key in renames
+        ], new_volume_folder
+    else:
+        return [
+            RenameItem(id=issue_id, existingPath=key, newPath=renames[key])
+            for key in renames
+        ], new_volume_folder
 
 
 def mass_rename(
@@ -946,11 +966,16 @@ def mass_rename(
     Returns:
         List[str]: The new filenames, only of files that have been be renamed.
     """
-    renames, new_volume_folder = preview_mass_rename(
+    all_namings, new_volume_folder = preview_mass_rename(
         volume_id, issue_id, filepath_filter
     )
-    if not renames and not new_volume_folder or isinstance(renames, list):
-        return []
+    renames = {
+        before: after
+        for before, after in all_namings.items()
+        if before != after
+    }
+    if not renames and not new_volume_folder:
+        return list(all_namings.values())
 
     volume = Volume(volume_id)
     volume_data = volume.get_data()
@@ -979,4 +1004,4 @@ def mass_rename(
     LOGGER.info(
         f"Renamed volume {volume_id} {f'issue {issue_id}' if issue_id else ''}"
     )
-    return list(renames.values())
+    return list(all_namings.values())
