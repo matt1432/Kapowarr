@@ -445,7 +445,7 @@ class Settings(metaclass=Singleton):
             from backend.implementations.comicvine import ComicVine
 
             converted_value = value.strip()
-            if converted_value and not ComicVine(converted_value).test_token():
+            if converted_value and not ComicVine(converted_value).test_key():
                 raise InvalidKeyValue(key, value)
 
         elif key == "download_folder":
