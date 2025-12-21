@@ -977,7 +977,8 @@ def api_issues(id: int) -> ApiReturn | None:
         monitored = edit_info.get("monitored")
         if monitored is not None:
             issue.update(
-                {"monitored": bool(monitored)}, edit_info.get("called_from", "")
+                {"monitored": bool(monitored)},
+                called_from=edit_info.get("called_from", ""),
             )
 
         result = issue.get_data()

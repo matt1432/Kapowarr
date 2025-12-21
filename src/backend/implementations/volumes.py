@@ -22,6 +22,7 @@ from backend.base.custom_exceptions import (
     InvalidKey,
     InvalidKeyValue,
     IssueNotFound,
+    KeyNotFound,
     TaskForVolumeRunning,
     VolumeAlreadyAdded,
     VolumeDownloadedFor,
@@ -99,31 +100,32 @@ vol_regex = compile(
 
 # region Issue
 class Issue:
-    def __init__(self, id: int, check_existence: bool = False) -> None:
-        """Create instance of issue.
+    def __init__(self, issue_id: int, check_existence: bool = False) -> None:
+        """Create an instance.
 
         Args:
-            id (int): The ID of the issue.
-            check_existence (bool, optional): Check if issue exists based on ID.
+            issue_id (int): The ID of the issue.
+            check_existence (bool, optional): Check whether the issue exists
+                based on its ID.
                 Defaults to False.
 
         Raises:
-            IssueNotFound: The issue was not found.
-                Can only be raised when check_existence is `True`.
+            IssueNotFound: The issue was not found. Can only be raised when
+                check_existence is `True`.
         """
-        self.id = id
+        self.id = issue_id
 
         if not check_existence:
             return
 
-        issue_id = (
+        _issue_id = (
             get_db()
             .execute("SELECT id FROM issues WHERE id = ? LIMIT 1;", (self.id,))
             .fetchone()
         )
 
-        if issue_id is None:
-            raise IssueNotFound(id)
+        if _issue_id is None:
+            raise IssueNotFound(issue_id)
         return
 
     @classmethod
@@ -131,8 +133,8 @@ class Issue:
     def from_volume_and_calc_number(
         cls, volume_id: int, calculated_issue_number: float
     ) -> Issue:
-        """Create instance of issue based on volume ID and calculated issue
-        number of issue.
+        """Create an instance based on the volume ID and calculated issue number
+        of the issue. The existance of the volume is checked.
 
         Args:
             volume_id (int): The ID of the volume that the issue is in.
@@ -143,7 +145,7 @@ class Issue:
             IssueNotFound: No issue found with the given arguments.
 
         Returns:
-            Issue: The issue instance.
+            Issue: The instance.
         """
         issue_id: int | None = (
             get_db()
@@ -169,7 +171,7 @@ class Issue:
         """Get data about the issue.
 
         Returns:
-            dict: The data.
+            IssueData: The data.
         """
         data = (
             get_db()
@@ -208,12 +210,37 @@ class Issue:
         """Get all files linked to the issue.
 
         Returns:
-            List[FileData]: List of file datas.
+            List[FileData]: List of file data.
         """
         return FilesDB.fetch(issue_id=self.id)
 
-    def __format_value(self, key: str, value: Any) -> Any:
+    def __format_value(self, key: str, value: Any, from_public: bool) -> Any:
+        """Check whether the value of an attribute is allowed and convert if
+        needed.
+
+        Args:
+            key (str): Key of attribute.
+            value (Any): Value of attribute.
+            from_public (bool): If True, only allow attributes to be changed
+                that are allowed to be changed by the user.
+
+        Raises:
+            KeyNotFound: Key doesn't exist or can't be changed.
+            InvalidKeyValue: Value of the key is not allowed.
+
+        Returns:
+            Any: (Converted) Attribute value.
+        """
+        allowed_keys: Sequence[str] = (
+            "monitored",
+            "title",
+            "date",
+            "description",
+        )
         converted_value = value
+
+        if from_public and key not in allowed_keys:
+            raise KeyNotFound(key)
 
         if key == "monitored" and not isinstance(converted_value, bool):
             raise InvalidKeyValue(key, value)
@@ -224,34 +251,22 @@ class Issue:
         self,
         data: Mapping[str, Any],
         called_from: str = "",
+        from_public: bool = False,
         update_websocket=True,
     ) -> None:
-        """Change aspects of the issue, in a `dict.update()` type of way.
+        """Change attributes of the issue, in a `dict.update()` type of way.
 
         Args:
             data (Mapping[str, Any]): The keys and their new values.
 
         Raises:
-            InvalidKey: Key is not allowed.
-            InvalidKeyValue: Value of key is not allowed.
+            KeyNotFound: Key doesn't exist or can't be changed.
+            InvalidKeyValue: Value of the key is not allowed.
         """
-        allowed_keys: Sequence[str] = (
-            "monitored",
-            "title",
-            "date",
-            "description",
-        )
-
         formatted_data = {}
 
         for key, value in data.items():
-            if key not in allowed_keys:
-                raise InvalidKey(key)
-            if key in allowed_keys:
-                if key == "monitored":
-                    formatted_data[key] = self.__format_value(key, value)
-                else:
-                    formatted_data[key] = value
+            formatted_data[key] = self.__format_value(key, value, from_public)
 
         cursor = get_db()
         for key, value in formatted_data.items():
@@ -265,22 +280,8 @@ class Issue:
         LOGGER.info(f"For issue {self.id}, changed: {formatted_data}")
         return
 
-    def __setitem__(self, __name: str, __value: Any) -> None:
-        """Change an aspect of the issue.
-
-        Args:
-            __name (str): The key of the aspect.
-            __value (Any): The new value of the aspect.
-
-        Raises:
-            InvalidKey: Key is not allowed.
-            InvalidKeyValue: Value of key is not allowed.
-        """
-        self.update({__name: __value})
-        return
-
     def delete(self) -> None:
-        """Delete the issue from the database."""
+        """Delete the issue from the database"""
         data = self.get_data()
 
         FilesDB.delete_issue_linked_files(self.id)
