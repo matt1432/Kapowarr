@@ -38,13 +38,13 @@ from backend.internals.settings import Settings
 
 # region Helpers
 def extract_files_from_folder(source_folder: str, volume_id: int) -> list[str]:
-    """Move files out of folder in to volume folder,
-    but only if they match to the volume. Otherwise they are deleted,
-    together with the original folder.
+    """Move files out of the source folder in to the volume folder, but only if
+    they match to the volume. Otherwise they are deleted. The source folder
+    is always deleted afterwards.
 
     Args:
         source_folder (str): The folder to extract files out of.
-        volume_id (int): The ID for which the files should be.
+        volume_id (int): The ID of the volume for which the files should be.
 
     Returns:
         List[str]: The filepaths of the files that were extracted.
@@ -58,44 +58,42 @@ def extract_files_from_folder(source_folder: str, volume_id: int) -> list[str]:
     volume_issues = volume.get_issues()
     end_year = volume.get_ending_year() or volume_data.year
 
-    # Filter non-relevant files
-    rel_files = [
-        c
-        for c in folder_contents
-        if (
-            folder_extraction_filter(
-                extract_filename_data(
-                    c.replace(Constants.ARCHIVE_EXTRACT_FOLDER + "_", ""),
-                    assume_volume_number=False,
-                ),
-                volume_data,
-                volume_issues,
-                end_year,
-            )
-            and "variant cover" not in c.lower().replace(" ", "")
+    relevant_files: list[str] = []
+    for file in folder_contents:
+        # Remove archive extraction folder name from filepath so that
+        # extracted series name is correct, if series name is extracted from
+        # foldername.
+        efd = extract_filename_data(
+            file.replace(Constants.ARCHIVE_EXTRACT_FOLDER + "_", ""),
+            assume_volume_number=False,
         )
-    ]
 
-    if not rel_files:
+        if folder_extraction_filter(efd, volume_data, volume_issues, end_year):
+            relevant_files.append(file)
+
+    if not relevant_files:
         LOGGER.warning(
             "No relevant files found in folder. Keeping all media files."
         )
-        rel_files = folder_contents
+        relevant_files = folder_contents
 
-    LOGGER.debug(f"Relevant files: {rel_files}")
+    LOGGER.debug(f"Relevant files: {relevant_files}")
 
-    # Move remaining files to main folder and delete source folder
+    # Move matching files to main folder and delete source folder
+    # (including non-matching files).
     result = []
-    for c in rel_files:
-        if c.endswith(FileConstants.IMAGE_EXTENSIONS):
-            dest = join(volume_data.folder, basename(dirname(c)), basename(c))
+    for file in relevant_files:
+        if file.endswith(FileConstants.IMAGE_EXTENSIONS):
+            dest = join(
+                volume_data.folder, basename(dirname(file)), basename(file)
+            )
 
         else:
-            dest = join(volume_data.folder, basename(c))
+            dest = join(volume_data.folder, basename(file))
 
-        dest = splitext(dest)[0] + splitext(set_detected_extension(c))[1]
+        dest = splitext(dest)[0] + splitext(set_detected_extension(file))[1]
 
-        rename_file(c, dest)
+        rename_file(file, dest)
         result.append(dest)
 
     delete_file_folder(source_folder)
@@ -164,17 +162,16 @@ class ConvertersManager:
     @classmethod
     @lru_cache(1)
     def formats_convertible_to_folder(cls) -> list[str]:
-        """Get all source_formats that can be converted into a folder.
+        """Get all source formats that can be converted into a folder.
 
         Returns:
-            list[str]: The source_formats.
+            list[str]: The source formats.
         """
-        result: list[str] = []
-        for source_format, target_formats in cls.converters.items():
-            if "folder" in target_formats:
-                result.append(source_format)
-
-        return result
+        return [
+            source_format
+            for source_format, target_format in cls.converters.items()
+            if "folder" in target_format
+        ]
 
     @classmethod
     @lru_cache(1)
