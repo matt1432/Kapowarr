@@ -86,7 +86,6 @@ from backend.internals.server import Server, StartTypeHandlers
 from backend.internals.settings import Settings, get_about_data
 
 api = Blueprint("api", __name__)
-library = Library()
 
 type ApiReturn = tuple[dict[str, Any], int]
 
@@ -182,9 +181,9 @@ def extract_key(
             try:
                 value = int(value)
                 if key == "volume_id":
-                    library.get_volume(value)
+                    Library.get_volume(value)
                 else:
-                    library.get_issue(value)
+                    Library.get_issue(value)
             except (ValueError, TypeError):
                 raise InvalidKeyValue(key, value)
 
@@ -801,9 +800,9 @@ def api_volumes() -> ApiReturn | None:
         sort = extract_key(request, "sort", False)
         filter = extract_key(request, "filter", False)
         if query:
-            volumes = library.search(query, sort, filter)
+            volumes = Library.search(query, sort, filter)
         else:
-            volumes = library.get_public_volumes(sort, filter)
+            volumes = Library.get_public_volumes(sort, filter)
 
         return return_api(volumes)
 
@@ -847,7 +846,7 @@ def api_volumes() -> ApiReturn | None:
             except ValueError:
                 raise InvalidKeyValue("special_version", special_version)
 
-        volume_id = library.add(
+        volume_id = Library.add(
             comicvine_id,
             root_folder_id,
             monitor,
@@ -857,7 +856,7 @@ def api_volumes() -> ApiReturn | None:
             sv,
             auto_search,
         )
-        volume_info = library.get_volume(volume_id).get_public_data()
+        volume_info = Library.get_volume(volume_id).get_public_data()
         return return_api(volume_info, code=201)
 
 
@@ -865,7 +864,7 @@ def api_volumes() -> ApiReturn | None:
 @error_handler
 @auth
 def api_volumes_stats() -> ApiReturn:
-    result = library.get_stats()
+    result = Library.get_stats()
     return return_api(result)
 
 
@@ -873,7 +872,7 @@ def api_volumes_stats() -> ApiReturn:
 @error_handler
 @auth
 def api_volume(id: int) -> ApiReturn | None:
-    volume = library.get_volume(id)
+    volume = Library.get_volume(id)
 
     if request.method == "GET":
         volume_info = volume.get_public_data()
@@ -928,7 +927,7 @@ def api_volume(id: int) -> ApiReturn | None:
 @error_handler
 @auth
 def api_volume_cover(id: int) -> tuple[Response, int]:
-    cover = library.get_volume(id).get_cover()
+    cover = Library.get_volume(id).get_cover()
     return send_file(cover, mimetype="image/jpeg"), 200
 
 
@@ -966,7 +965,7 @@ def api_delete_thumbnails() -> ApiReturn:
 @error_handler
 @auth
 def api_issues(id: int) -> ApiReturn | None:
-    issue = library.get_issue(id)
+    issue = Library.get_issue(id)
 
     if request.method == "GET":
         result = issue.get_data()
@@ -994,7 +993,7 @@ def api_issues(id: int) -> ApiReturn | None:
 @error_handler
 @auth
 def api_rename(id: int) -> ApiReturn:
-    library.get_volume(id)
+    Library.get_volume(id)
     result = preview_mass_rename_api(id)[0]
     return return_api(result)
 
@@ -1003,7 +1002,7 @@ def api_rename(id: int) -> ApiReturn:
 @error_handler
 @auth
 def api_rename_issue(id: int) -> ApiReturn:
-    volume_id = library.get_issue(id).get_data().volume_id
+    volume_id = Library.get_issue(id).get_data().volume_id
     result = preview_mass_rename_api(volume_id, id)[0]
     return return_api(result)
 
@@ -1017,7 +1016,7 @@ def api_rename_issue(id: int) -> ApiReturn:
 @error_handler
 @auth
 def api_convert(id: int) -> ApiReturn:
-    library.get_volume(id)
+    Library.get_volume(id)
     result = preview_mass_convert(id, is_for_api=True)
     return return_api(result)
 
@@ -1026,7 +1025,7 @@ def api_convert(id: int) -> ApiReturn:
 @error_handler
 @auth
 def api_convert_issue(id: int) -> ApiReturn:
-    volume_id = library.get_issue(id).get_data().volume_id
+    volume_id = Library.get_issue(id).get_data().volume_id
     result = preview_mass_convert(volume_id, id, is_for_api=True)
     return return_api(result)
 
@@ -1040,7 +1039,7 @@ def api_convert_issue(id: int) -> ApiReturn:
 @error_handler
 @auth
 def api_volume_manual_search(id: int) -> ApiReturn | None:
-    library.get_volume(id)
+    Library.get_volume(id)
 
     if request.method == "GET":
         result = manual_search(id)
@@ -1055,7 +1054,7 @@ def api_volume_manual_search(id: int) -> ApiReturn | None:
 @error_handler
 @auth
 def api_volume_download(id: int) -> ApiReturn:
-    library.get_volume(id)
+    Library.get_volume(id)
     result_key: SearchResultData = extract_key(request, "result")
     force_match: bool = extract_key(request, "force_match")
     result = run(DownloadHandler().add(result_key, id, force_match=force_match))
@@ -1072,7 +1071,7 @@ def api_volume_download(id: int) -> ApiReturn:
 @error_handler
 @auth
 def api_issue_manual_search(id: int) -> ApiReturn | None:
-    volume_id = library.get_issue(id).get_data().volume_id
+    volume_id = Library.get_issue(id).get_data().volume_id
 
     if request.method == "GET":
         result = manual_search(volume_id, id)
@@ -1087,7 +1086,7 @@ def api_issue_manual_search(id: int) -> ApiReturn | None:
 @error_handler
 @auth
 def api_issue_download(id: int) -> ApiReturn:
-    volume_id = library.get_issue(id).get_data().volume_id
+    volume_id = Library.get_issue(id).get_data().volume_id
     result_key: SearchResultData = extract_key(request, "result")
     force_match: bool = extract_key(request, "force_match")
     result = run(

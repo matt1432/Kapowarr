@@ -1027,12 +1027,13 @@ class Volume:
 
 # region Library
 class Library:
+    @classmethod
     def get_public_volumes(
-        self,
+        cls,
         sort: LibrarySorting = LibrarySorting.TITLE,
         filter: LibraryFilter | int | None = None,
-    ) -> list[dict]:
-        """Get all volumes in the library
+    ) -> list[dict[str, Any]]:
+        """Get all the volumes in the library.
 
         Args:
             sort (LibrarySorting, optional): How to sort the list.
@@ -1111,12 +1112,13 @@ class Library:
 
         return volumes
 
+    @classmethod
     def search(
-        self,
+        cls,
         query: str,
         sort: LibrarySorting = LibrarySorting.TITLE,
         filter: LibraryFilter | None = None,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """Search in the library with a query.
 
         Args:
@@ -1135,7 +1137,7 @@ class Library:
         if query.startswith(("4050-", "cv:")):
             try:
                 cv_id = to_number_cv_id((query,))[0]
-                volumes = self.get_public_volumes(sort, cv_id)
+                volumes = cls.get_public_volumes(sort, cv_id)
 
             except ValueError:
                 volumes = []
@@ -1143,13 +1145,19 @@ class Library:
         else:
             volumes = [
                 v
-                for v in self.get_public_volumes(sort, filter)
+                for v in cls.get_public_volumes(sort, filter)
                 if match_title(v["title"], query, allow_contains=True)
             ]
 
         return volumes
 
-    def get_stats(self) -> dict[str, int]:
+    @classmethod
+    def get_stats(cls) -> dict[str, int]:
+        """Get library statistics.
+
+        Returns:
+            Dict[str, int]: The statistics.
+        """
         result = (
             get_db()
             .execute("""
@@ -1173,15 +1181,17 @@ class Library:
         )
         return result
 
-    def get_volumes(self) -> list[int]:
-        """Get a list of the ID's of all the volumes.
+    @classmethod
+    def get_volumes(cls) -> list[int]:
+        """Get a list of the IDs of all the volumes.
 
         Returns:
-            List[int]: The list of ID's.
+            List[int]: The list of IDs.
         """
         return first_of_subarrays(get_db().execute("SELECT id FROM volumes;"))
 
-    def get_volume(self, volume_id: int) -> Volume:
+    @classmethod
+    def get_volume(cls, volume_id: int) -> Volume:
         """Get a volume from the library.
 
         Args:
@@ -1195,7 +1205,8 @@ class Library:
         """
         return Volume(volume_id, check_existence=True)
 
-    def get_issue(self, issue_id: int) -> Issue:
+    @classmethod
+    def get_issue(cls, issue_id: int) -> Issue:
         """Get an issue from the library.
 
         Args:
@@ -1209,8 +1220,9 @@ class Library:
         """
         return Issue(issue_id, check_existence=True)
 
-    def _volume_added(self, comicvine_id: int) -> bool:
-        """Check if a volume is in the library.
+    @classmethod
+    def _volume_added(cls, comicvine_id: int) -> bool:
+        """Check whether a volume is in the library.
 
         Args:
             comicvine_id (int): The CV ID of the volume to check for.
@@ -1228,8 +1240,9 @@ class Library:
             is not None
         )
 
+    @classmethod
     def add(
-        self,
+        cls,
         comicvine_id: int,
         root_folder_id: int,
         monitored: bool,
@@ -1274,7 +1287,7 @@ class Library:
             CVRateLimitReached: The ComicVine API rate limit is reached.
 
         Returns:
-            int: The new ID of the volume.
+            int: The new ID of the new volume.
         """
         from backend.implementations.naming import generate_volume_folder_path
 
@@ -1290,7 +1303,7 @@ class Library:
             special_version,
         )
 
-        if self._volume_added(comicvine_id):
+        if cls._volume_added(comicvine_id):
             raise VolumeAlreadyAdded(comicvine_id)
 
         # Raises RootFolderNotFound when ID is invalid
@@ -1898,7 +1911,7 @@ def delete_issue_file(file_id: int) -> None:
     )
 
     if volume_id:
-        vf = Library().get_volume(volume_id).vd.folder
+        vf = Library.get_volume(volume_id).vd.folder
         delete_file_folder(file_data["filepath"])
         delete_empty_parent_folders(dirname(file_data["filepath"]), vf)
     else:

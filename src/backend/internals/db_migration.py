@@ -361,7 +361,7 @@ def _migrate_add_special_version():
 
     updates = (
         (determine_special_version(v_id), v_id)
-        for v_id in Library().get_volumes()
+        for v_id in Library.get_volumes()
     )
 
     cursor.executemany(
@@ -430,7 +430,7 @@ def _migrate_update_special_version():
 
     updates = (
         (determine_special_version(v_id), v_id)
-        for v_id in Library().get_volumes()
+        for v_id in Library.get_volumes()
     )
 
     get_db().executemany(
