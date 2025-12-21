@@ -64,7 +64,7 @@ from backend.base.helpers import (
 from backend.base.logging import LOGGER
 from backend.implementations.comicvine import ComicVine
 from backend.implementations.marvel_meta import get_marvel_issues
-from backend.implementations.matching import _match_title, file_importing_filter
+from backend.implementations.matching import file_importing_filter, match_title
 from backend.implementations.root_folders import RootFolders
 from backend.internals.db import commit, get_db
 from backend.internals.db_models import FilesDB, GeneralFilesDB
@@ -1043,7 +1043,7 @@ class Library:
             volumes = [
                 v
                 for v in self.get_public_volumes(sort, filter)
-                if _match_title(v["title"], query, allow_contains=True)
+                if match_title(v["title"], query, allow_contains=True)
             ]
 
         return volumes
