@@ -4,7 +4,6 @@ Contains all the converters for converting from one format to another.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from functools import lru_cache
 from itertools import chain
 from os import utime
@@ -14,6 +13,7 @@ from zipfile import ZipFile
 from backend.base.definitions import (
     Constants,
     FileConstants,
+    FileConverter,
 )
 from backend.base.file_extraction import extract_filename_data
 from backend.base.files import (
@@ -101,8 +101,46 @@ def extract_files_from_folder(source_folder: str, volume_id: int) -> list[str]:
 
 
 # region Manager
+class ProposedConversion:
+    def __init__(
+        self, filepath: str, converter: FileConverter, target_format: str
+    ) -> None:
+        """Create a proposal for a conversion of a file.
+
+        Args:
+            filepath (str): The file to convert.
+            converter (FileConverter): The converter that will convert the file.
+            target_format (str): The format that the file will end up being in.
+        """
+        self.filepath = filepath
+        self.source_format = splitext(filepath)[1].lower().lstrip(".")
+        self.target_format = target_format
+        self.converter = converter
+
+        if target_format == "folder":
+            self.new_filepath = None
+        else:
+            self.new_filepath = splitext(filepath)[0] + "." + target_format
+
+        return
+
+    def perform_conversion(self) -> list[str]:
+        """Actually do the conversion that is proposed.
+
+        Returns:
+            List[str]: The resulting files or directories, in target_format.
+        """
+        LOGGER.info(
+            "Converting file from %s to %s: %s",
+            self.source_format,
+            self.target_format,
+            self.filepath,
+        )
+        return self.converter(self.filepath)
+
+
 class ConvertersManager:
-    converters: dict[str, dict[str, Callable[[str], list[str]]]] = {}
+    converters: dict[str, dict[str, FileConverter]] = {}
 
     @classmethod
     def register_converter(cls, source_format: str, target_format: str):
@@ -124,7 +162,7 @@ class ConvertersManager:
                 target format is already registered.
         """
 
-        def wrapper(converter: Callable[[str], list[str]]):
+        def wrapper(converter: FileConverter):
             if not (
                 source_format == "folder"
                 or "." + source_format in FileConstants.SCANNABLE_EXTENSIONS
@@ -184,9 +222,18 @@ class ConvertersManager:
         return set(chain.from_iterable(cls.converters.values()))
 
     @classmethod
-    def select_converter(
-        cls, filepath: str
-    ) -> tuple[str, str, Callable[[str], list[str]]] | None:
+    def select_converter(cls, filepath: str) -> ProposedConversion | None:
+        """Get a proposed conversion for the file, based on the current format
+        and the format preference.
+
+        Args:
+            filepath (str): The filepath to convert for.
+
+        Returns:
+            Union[ProposedConversion, None]: The selected conversion that should
+                happen, or `None` if the file should be kept in the current
+                format.
+        """
         settings = Settings().get_settings()
         source_format = splitext(filepath)[1].lower().lstrip(".")
 
@@ -196,10 +243,8 @@ class ConvertersManager:
             and archive_contains_issues(filepath)
         ):
             # Extract issue files from archive
-            return (
-                source_format,
-                "folder",
-                cls.converters[source_format]["folder"],
+            return ProposedConversion(
+                filepath, cls.converters[source_format]["folder"], "folder"
             )
 
         for potential_format in settings.format_preference:
@@ -209,10 +254,10 @@ class ConvertersManager:
 
             if potential_format in cls.converters[source_format]:
                 # Found format to convert to
-                return (
-                    source_format,
-                    potential_format,
+                return ProposedConversion(
+                    filepath,
                     cls.converters[source_format][potential_format],
+                    potential_format,
                 )
 
         # Can't convert file to anything that is desired

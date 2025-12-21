@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from datetime import date
 from enum import Enum
@@ -23,6 +23,10 @@ import requests
 if TYPE_CHECKING:
     from backend.base.helpers import AsyncSession
     from backend.implementations.volumes import Volume
+
+
+# region Types
+FileConverter = Callable[[str], list[str]]
 
 
 # region Constants
@@ -962,24 +966,6 @@ class MassEditorAction(ABC):
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}(action={self.identifier}; ids={self.volume_ids}); {id(self)}>"
-
-
-class FileConverter(ABC):
-    source_format: str
-    target_format: str
-
-    @staticmethod
-    @abstractmethod
-    def convert(file: str) -> list[str]:
-        """Convert a file from `source_format` to `target_format`.
-
-        Args:
-            file (str): Filepath to the source file, should be in `source_format`.
-
-        Returns:
-            List[str]: The resulting files or directories, in `target_format`.
-        """
-        ...
 
 
 class SearchSource(ABC):
