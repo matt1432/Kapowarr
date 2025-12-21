@@ -2,7 +2,6 @@ from asyncio import run
 from glob import glob
 from itertools import chain
 from os.path import abspath, basename, dirname, isfile, splitext
-from typing import Any
 
 from backend.base.custom_exceptions import (
     InvalidKeyValue,
@@ -24,7 +23,6 @@ from backend.base.files import (
     list_files,
     rename_file,
 )
-from backend.base.helpers import DictKeyedDict, batched, force_range
 from backend.base.logging import LOGGER
 from backend.implementations.comicvine import ComicVine
 from backend.implementations.naming import mass_rename
@@ -32,6 +30,41 @@ from backend.implementations.root_folders import RootFolders
 from backend.implementations.volumes import Library, Volume, scan_files
 from backend.internals.db import commit
 from backend.internals.db_models import FilesDB
+
+
+def create_groups(
+    files: dict[str, FilenameData],
+) -> dict[int, dict[str, FilenameData]]:
+    """Group files together that seem like they are for the same volume.
+
+    Args:
+        files (Dict[str, FilenameData]): The files in the form of a mapping from
+            their filename to their filename data.
+
+    Returns:
+        Dict[int, Dict[str, FilenameData]]: A mapping from the group number
+            (which doesn't cary any meaning except for identifying the group)
+            to the files that are in the group, where the files are in the form
+            of a mapping from the filename to their filename data.
+    """
+    group_mapping: dict[int, FilenameData] = {}
+    groups: dict[int, dict[str, FilenameData]] = {}
+
+    for file, file_data in files.items():
+        match_data = file_data.copy()
+        del match_data["issue_number"]  # type: ignore
+
+        for group_idx, group_data in group_mapping.items():
+            if match_data == group_data:
+                groups[group_idx][file] = file_data
+                break
+        else:
+            new_group_number = max(groups or (0,)) + 1
+            groups.setdefault(new_group_number, {})[file] = file_data
+            group_mapping[new_group_number] = match_data
+
+    LOGGER.debug("File groupings: %s", groups)
+    return groups
 
 
 def propose_library_import(
@@ -128,8 +161,7 @@ def propose_library_import(
     # Filter away imported files and apply limit
     folders = set()
     image_folders = set()
-    # efd to files with that efd
-    unimported_files = DictKeyedDict()
+    unimported_files: dict[str, FilenameData] = {}
     for f in all_files:
         if f in imported_files or f in all_excluded_files:
             continue
@@ -139,12 +171,11 @@ def propose_library_import(
             # File directly in root folder is not allowed
             continue
 
-        efd = extract_filename_data(f, prefer_folder_year=True)
-        del efd["issue_number"]  # pyright: ignore
+        file_data = extract_filename_data(f, prefer_folder_year=True)
 
         if (
             f.endswith(FileConstants.IMAGE_EXTENSIONS)
-            and efd["special_version"] != SpecialVersion.COVER
+            and file_data["special_version"] != SpecialVersion.COVER
         ):
             if d in image_folders:
                 continue
@@ -156,39 +187,35 @@ def propose_library_import(
         if len(folders) > limit:
             break
 
-        unimported_files.setdefault(efd, []).append(f)
+        unimported_files[f] = file_data
 
-    LOGGER.debug("File groupings: %s", unimported_files)
-
-    # Find a match for the files on CV
-    cv = ComicVine()
-    result: list[dict[str, Any]] = []
-    uf: list[FilenameData] = list(unimported_files.keys())
-    uf.sort(
-        key=lambda f: (
-            f["series"],
-            force_range(f["volume_number"] or 0)[0],
-            f["year"] or 0,
+    # Sort by filename
+    unimported_files = {
+        f: d
+        for f, d in sorted(
+            unimported_files.items(), key=lambda e: basename(e[0])
         )
-    )
-    for batch_index, uf_batch in enumerate(batched(uf, 10)):
-        group_to_cv = run(cv.filenames_to_cvs(uf_batch, only_english))
-        result += [
-            {
-                "filepath": f,
-                "file_title": (
-                    splitext(basename(f))[0] if isfile(f) else basename(f)
-                ),
-                "cv": search_result,
-                "group_number": batch_index * 10 + group_index,
-            }
-            for group_index, (group_data, search_result) in enumerate(
-                group_to_cv.items()
-            )
-            for f in unimported_files[group_data]
-        ]
+    }
 
-    result.sort(key=lambda e: (e["group_number"], e["file_title"]))
+    # Find a match for the groups on CV
+    group_to_files = create_groups(unimported_files)
+    group_to_cv = run(
+        ComicVine().filenames_to_cvs(group_to_files, only_english=only_english)
+    )
+
+    # Build result
+    result = [
+        {
+            "filepath": file,
+            "file_title": (
+                splitext(basename(file))[0] if isfile(file) else basename(file)
+            ),
+            "cv": group_to_cv[group_number],
+            "group_number": group_number,
+        }
+        for group_number, files in group_to_files.items()
+        for file in files
+    ]
 
     return result
 
