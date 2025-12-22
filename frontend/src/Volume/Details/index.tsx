@@ -19,6 +19,7 @@ import {
     commandNames,
     icons,
     kinds,
+    massEditActions,
     scrollDirections,
     sizes,
     socketEvents,
@@ -99,9 +100,11 @@ export default function VolumeDetails({ volumeId }: VolumeDetailsProps) {
         hasIssues,
         issueFileCount,
         hasMonitoredIssues,
+        refetch,
     } = useSearchVolumeQuery(
         { volumeId },
         {
+            refetchOnMountOrArgChange: true,
             selectFromResult: ({
                 data,
                 error,
@@ -139,6 +142,18 @@ export default function VolumeDetails({ volumeId }: VolumeDetailsProps) {
         [calledFrom],
     );
     useSocketCallback(socketEvents.VOLUME_UPDATED, socketCallback);
+
+    const updateAllSocketCallback = useCallback<
+        SocketEventHandler<typeof socketEvents.MASS_EDITOR_STATUS>
+    >(
+        (data) => {
+            if (data.identifier === massEditActions.UPDATE) {
+                refetch();
+            }
+        },
+        [refetch],
+    );
+    useSocketCallback(socketEvents.MASS_EDITOR_STATUS, updateAllSocketCallback);
 
     const { nextVolume, previousVolume } = useMemo(() => {
         const sortedVolume = allVolumes.toSorted(sortByProp('title'));
