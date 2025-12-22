@@ -696,7 +696,8 @@ class Volume:
                 "monitored",
                 "monitor_new_issues",
                 "special_version",
-                "special_version_lockedlibgen_series_id",
+                "special_version_locked",
+                "libgen_series_id",
                 "marvel_id",
             )
 
