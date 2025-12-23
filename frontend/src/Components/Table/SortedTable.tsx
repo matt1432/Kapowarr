@@ -1,7 +1,7 @@
 // IMPORTS
 
 // React
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, type RefObject } from 'react';
 
 // Redux
 import { useRootDispatch, useRootSelector } from 'Store/createAppStore';
@@ -37,6 +37,7 @@ interface SortedTableProps<
     tableName: Name;
     columns: Column<ColumnName>[];
     items: T[];
+    itemsRef?: RefObject<T[]>;
     itemRenderer: (item: T) => React.ReactElement;
 
     predicates?: Predicates<Name, ColumnName, T>;
@@ -67,6 +68,7 @@ export default function SortedTable<
     tableName,
     columns,
     items,
+    itemsRef,
     itemRenderer,
     predicates = {},
     onSortPress,
@@ -80,6 +82,7 @@ export default function SortedTable<
     const sortedItems = useSort({
         columns,
         items,
+        itemsRef,
         predicates,
         sortKey: sortKey as ColumnName | null,
         sortDirection,

@@ -165,6 +165,7 @@ export default function IssueTable({ volumeId }: IssueTableProps) {
     useSocketCallback(socketEvents.ISSUE_UPDATED, socketCallback);
 
     const lastToggledIssue = useRef<number | null>(null);
+    const itemsRef = useRef<typeof issues>([]);
 
     const handleMonitorIssuePress = useCallback(
         (
@@ -177,13 +178,13 @@ export default function IssueTable({ volumeId }: IssueTableProps) {
 
             if (shiftKey && lastToggled) {
                 const { lower, upper } = getToggledRange(
-                    issues,
+                    itemsRef.current,
                     issueId,
                     lastToggled,
                 );
 
                 for (let i = lower; i < upper; i++) {
-                    issueIds.push(issues[i].id);
+                    issueIds.push(itemsRef.current[i].id);
                 }
             }
 
@@ -198,7 +199,7 @@ export default function IssueTable({ volumeId }: IssueTableProps) {
                 });
             });
         },
-        [issues, isToggling, updateIssue],
+        [isToggling, updateIssue],
     );
 
     return (
@@ -207,6 +208,7 @@ export default function IssueTable({ volumeId }: IssueTableProps) {
                 tableName="issueTable"
                 columns={columns}
                 items={issues}
+                itemsRef={itemsRef}
                 itemRenderer={(issue) => (
                     <IssueRow
                         key={issue.id}

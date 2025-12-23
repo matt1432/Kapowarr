@@ -19,6 +19,8 @@ function getToggledRange<T extends SelectStateModel>(
         upper = changedIndex;
     }
 
+    console.log(lower, upper);
+
     return {
         lower,
         upper,

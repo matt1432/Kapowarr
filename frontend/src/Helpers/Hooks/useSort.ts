@@ -1,7 +1,7 @@
 // IMPORTS
 
 // React
-import { useMemo } from 'react';
+import { useMemo, type RefObject } from 'react';
 
 // Misc
 import { sortDirections } from 'Helpers/Props';
@@ -36,6 +36,7 @@ interface UseSortProps<
 > {
     columns: Column<ColumnName>[];
     items: T[];
+    itemsRef?: RefObject<T[]>;
 
     predicates?: Predicates<Name, ColumnName, T>;
 
@@ -127,6 +128,7 @@ export default function useSort<
 >({
     columns,
     items,
+    itemsRef,
     predicates = {},
     sortKey,
     sortDirection = sortDirections.ASCENDING,
@@ -138,25 +140,30 @@ export default function useSort<
         [columns, predicates],
     );
 
-    return useMemo(
-        () =>
-            items.toSorted(
-                (a, b) =>
-                    (sorters[sortKey]?.(
-                        sortDirection ?? sortDirections.ASCENDING,
-                    )(a, b) ||
-                        sorters[secondarySortKey]?.(
-                            secondarySortDirection ?? sortDirections.ASCENDING,
-                        )(a, b)) ??
-                    0,
-            ),
-        [
-            items,
-            sorters,
-            sortKey,
-            sortDirection,
-            secondarySortKey,
-            secondarySortDirection,
-        ],
-    );
+    return useMemo(() => {
+        const finalItems = items.toSorted(
+            (a, b) =>
+                (sorters[sortKey]?.(sortDirection ?? sortDirections.ASCENDING)(
+                    a,
+                    b,
+                ) ||
+                    sorters[secondarySortKey]?.(
+                        secondarySortDirection ?? sortDirections.ASCENDING,
+                    )(a, b)) ??
+                0,
+        );
+        if (itemsRef) {
+            // eslint-disable-next-line react-hooks/refs
+            itemsRef.current = finalItems;
+        }
+        return finalItems;
+    }, [
+        items,
+        itemsRef,
+        sorters,
+        sortKey,
+        sortDirection,
+        secondarySortKey,
+        secondarySortDirection,
+    ]);
 }
