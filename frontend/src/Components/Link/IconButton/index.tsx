@@ -15,7 +15,8 @@ import styles from './index.module.css';
 
 // Types
 export interface IconButtonProps
-    extends Omit<LinkProps, 'name' | 'kind'>,
+    extends
+        Omit<LinkProps, 'name' | 'kind'>,
         Pick<IconProps, 'name' | 'kind' | 'size' | 'isSpinning'> {
     iconClassName?: IconProps['className'];
 }

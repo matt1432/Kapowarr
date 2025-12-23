@@ -15,11 +15,10 @@ import SelectedMenuItem, {
 import type { SortDirection } from 'Helpers/Props/sortDirections';
 import type { VolumeIndexColumnName } from 'Volume/Index/columns';
 
-interface SortMenuItemProps
-    extends Omit<
-        SelectedMenuItemProps<VolumeIndexColumnName>,
-        'isSelected' | 'onPress'
-    > {
+interface SortMenuItemProps extends Omit<
+    SelectedMenuItemProps<VolumeIndexColumnName>,
+    'isSelected' | 'onPress'
+> {
     name?: VolumeIndexColumnName;
     sortKey?: VolumeIndexColumnName | null;
     sortDirection?: SortDirection | null;

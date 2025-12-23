@@ -9,8 +9,10 @@ import SelectedMenuItem, {
 } from './SelectedMenuItem';
 
 // Types
-interface FilterMenuItemProps<T extends string>
-    extends Omit<SelectedMenuItemProps<T>, 'isSelected' | 'onPress'> {
+interface FilterMenuItemProps<T extends string> extends Omit<
+    SelectedMenuItemProps<T>,
+    'isSelected' | 'onPress'
+> {
     name?: T;
     filterKey: T;
     children: React.ReactNode;

@@ -34,11 +34,10 @@ import styles from './index.module.css';
 // Types
 import type { InputChanged } from 'typings/Inputs';
 
-interface AutoSuggestInputProps<K extends string, T>
-    extends Omit<
-        AutosuggestPropsBase<T>,
-        'renderInputComponent' | 'inputProps'
-    > {
+interface AutoSuggestInputProps<K extends string, T> extends Omit<
+    AutosuggestPropsBase<T>,
+    'renderInputComponent' | 'inputProps'
+> {
     forwardedRef?: MutableRefObject<Autosuggest<T> | null>;
     className?: string;
     inputContainerClassName?: string;

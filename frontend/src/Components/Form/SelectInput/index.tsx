@@ -17,8 +17,10 @@ import styles from './index.module.css';
 // Types
 import type { InputChanged } from 'typings/Inputs';
 
-export interface SelectInputOption
-    extends Pick<ComponentProps<'option'>, 'disabled'> {
+export interface SelectInputOption extends Pick<
+    ComponentProps<'option'>,
+    'disabled'
+> {
     key: string | number;
     value: string | number | (() => string | number);
 }

@@ -10,8 +10,10 @@ import TextInput from '../TextInput';
 import type { InputChanged } from 'typings/Inputs';
 import type { TextInputProps } from '../TextInput';
 
-export interface NumberInputProps<K extends string>
-    extends Omit<TextInputProps<K, 'number'>, 'value' | 'onChange'> {
+export interface NumberInputProps<K extends string> extends Omit<
+    TextInputProps<K, 'number'>,
+    'value' | 'onChange'
+> {
     value?: number | null;
     min?: number;
     max?: number;

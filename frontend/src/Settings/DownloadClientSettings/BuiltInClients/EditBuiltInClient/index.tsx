@@ -12,8 +12,7 @@ import EditBuiltInClientModalContent from './EditBuiltInClientModalContent';
 // Types
 import type { EditBuiltInClientModalContentProps } from './EditBuiltInClientModalContent';
 
-interface EditBuiltInClientModalProps
-    extends EditBuiltInClientModalContentProps {
+interface EditBuiltInClientModalProps extends EditBuiltInClientModalContentProps {
     isOpen: boolean;
 }
 

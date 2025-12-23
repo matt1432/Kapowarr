@@ -19,15 +19,14 @@ import SpecialVersionSelectInputSelectedValue from '../SpecialVersionSelectInput
 // Types
 import type { SpecialVersion } from 'Helpers/Props/specialVersions';
 
-export interface SpecialVersionSelectInputProps<K extends string>
-    extends Omit<
-        EnhancedSelectInputProps<
-            K,
-            EnhancedSelectInputValue<SpecialVersion>,
-            SpecialVersion
-        >,
-        'values'
-    > {
+export interface SpecialVersionSelectInputProps<K extends string> extends Omit<
+    EnhancedSelectInputProps<
+        K,
+        EnhancedSelectInputValue<SpecialVersion>,
+        SpecialVersion
+    >,
+    'values'
+> {
     includeNoChange?: boolean;
     includeNoChangeDisabled?: boolean;
     includeMixed?: boolean;

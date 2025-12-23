@@ -12,8 +12,7 @@ import EditRemoteMappingModalContent from './ModalContent';
 // Types
 import type { EditRemoteMappingModalContentProps } from './ModalContent';
 
-interface EditRemoteMappingModalProps
-    extends EditRemoteMappingModalContentProps {
+interface EditRemoteMappingModalProps extends EditRemoteMappingModalContentProps {
     isOpen: boolean;
 }
 

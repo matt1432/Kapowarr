@@ -14,8 +14,7 @@ import EnhancedSelectInputOption, {
 import styles from './index.module.css';
 
 // Types
-interface RootFolderSelectInputOptionProps
-    extends EnhancedSelectInputOptionProps {
+interface RootFolderSelectInputOptionProps extends EnhancedSelectInputOptionProps {
     id: string;
     value: string;
     freeSpace?: number;

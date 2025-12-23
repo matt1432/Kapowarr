@@ -15,8 +15,10 @@ import PageToolbarButton, {
 } from 'Components/Page/Toolbar/PageToolbarButton';
 
 // Types
-interface VolumeIndexSelectAllButtonProps
-    extends Omit<PageToolbarButtonProps, 'iconName'> {
+interface VolumeIndexSelectAllButtonProps extends Omit<
+    PageToolbarButtonProps,
+    'iconName'
+> {
     isSelectMode: boolean;
 }
 

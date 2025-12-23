@@ -12,8 +12,7 @@ import EnhancedSelectInputOption, {
 import styles from './index.module.css';
 
 // Types
-interface SpecialVersionSelectInputOptionProps
-    extends EnhancedSelectInputOptionProps {
+interface SpecialVersionSelectInputOptionProps extends EnhancedSelectInputOptionProps {
     id: string;
     value: string;
     isMobile: boolean;

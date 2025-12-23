@@ -52,8 +52,10 @@ interface AddNewVolumeSuggestion {
     title: string;
 }
 
-export interface SuggestedVolume
-    extends Pick<Volume, 'title' | 'id' | 'comicvineId'> {
+export interface SuggestedVolume extends Pick<
+    Volume,
+    'title' | 'id' | 'comicvineId'
+> {
     firstCharacter: string;
 }
 

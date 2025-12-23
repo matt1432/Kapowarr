@@ -9,8 +9,7 @@ import MonitoringOptionsModalContent, {
 } from './MonitoringOptionsModalContent';
 
 // Types
-interface MonitoringOptionsModalProps
-    extends MonitoringOptionsModalContentProps {
+interface MonitoringOptionsModalProps extends MonitoringOptionsModalContentProps {
     isOpen: boolean;
 }
 

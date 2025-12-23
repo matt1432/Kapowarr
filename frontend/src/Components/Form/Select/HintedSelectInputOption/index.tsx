@@ -15,8 +15,10 @@ import EnhancedSelectInputOption, {
 import styles from './index.module.css';
 
 // Types
-interface HintedSelectInputOptionProps
-    extends Omit<EnhancedSelectInputOptionProps, 'isSelected'> {
+interface HintedSelectInputOptionProps extends Omit<
+    EnhancedSelectInputOptionProps,
+    'isSelected'
+> {
     value: string;
     hint?: React.ReactNode;
     isSelected?: boolean;

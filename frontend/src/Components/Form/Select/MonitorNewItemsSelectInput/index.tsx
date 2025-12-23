@@ -10,11 +10,10 @@ import EnhancedSelectInput, {
 } from '../EnhancedSelectInput';
 
 // Types
-export interface MonitorNewItemsSelectInputProps<K extends string>
-    extends Omit<
-        EnhancedSelectInputProps<K, EnhancedSelectInputValue<string>, string>,
-        'values'
-    > {
+export interface MonitorNewItemsSelectInputProps<K extends string> extends Omit<
+    EnhancedSelectInputProps<K, EnhancedSelectInputValue<string>, string>,
+    'values'
+> {
     includeNoChange?: boolean;
     includeNoChangeDisabled?: boolean;
     includeMixed?: boolean;

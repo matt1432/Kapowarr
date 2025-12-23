@@ -16,9 +16,9 @@ interface TableOptionsModalWrapperProps<
     Name extends keyof ColumnNameMap,
     ColumnName extends ColumnNameMap[Name],
 > extends Omit<
-        TableOptionsModalProps<Name, ColumnName>,
-        'isOpen' | 'onModalClose'
-    > {
+    TableOptionsModalProps<Name, ColumnName>,
+    'isOpen' | 'onModalClose'
+> {
     columns: Column<ColumnName>[];
     children: ReactElement<LinkProps>;
 }

@@ -13,8 +13,10 @@ import MenuButton, { type MenuButtonProps } from 'Components/Menu/MenuButton';
 import styles from './index.module.css';
 
 // Types
-export interface ToolbarMenuButtonProps
-    extends Omit<MenuButtonProps, 'children'> {
+export interface ToolbarMenuButtonProps extends Omit<
+    MenuButtonProps,
+    'children'
+> {
     className?: string;
     iconName: IconName;
     showIndicator?: boolean;

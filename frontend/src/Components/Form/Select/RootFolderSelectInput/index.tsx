@@ -16,8 +16,7 @@ import EnhancedSelectInput, {
 } from '../EnhancedSelectInput';
 
 // Types
-export interface RootFolderSelectInputValue
-    extends EnhancedSelectInputValue<string> {
+export interface RootFolderSelectInputValue extends EnhancedSelectInputValue<string> {
     freeSpace?: number;
 }
 

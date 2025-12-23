@@ -9,8 +9,7 @@ import AddDownloadClientModalContent from './AddDownloadClientModalContent';
 // Types
 import type { AddDownloadClientModalContentProps } from './AddDownloadClientModalContent';
 
-interface AddDownloadClientModalProps
-    extends AddDownloadClientModalContentProps {
+interface AddDownloadClientModalProps extends AddDownloadClientModalContentProps {
     isOpen: boolean;
 }
 

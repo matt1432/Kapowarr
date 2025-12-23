@@ -12,8 +12,7 @@ import EditDownloadClientModalContent from './EditDownloadClientModalContent';
 // Types
 import type { EditDownloadClientModalContentProps } from './EditDownloadClientModalContent';
 
-interface EditDownloadClientModalProps
-    extends EditDownloadClientModalContentProps {
+interface EditDownloadClientModalProps extends EditDownloadClientModalContentProps {
     isOpen: boolean;
 }
 

@@ -11,8 +11,10 @@ import SelectedMenuItem, {
 // Types
 import type { IndexView } from 'Volume/Index';
 
-interface ViewMenuItemProps
-    extends Omit<SelectedMenuItemProps<IndexView>, 'isSelected'> {
+interface ViewMenuItemProps extends Omit<
+    SelectedMenuItemProps<IndexView>,
+    'isSelected'
+> {
     name?: IndexView;
     selectedView: IndexView;
     children: React.ReactNode;

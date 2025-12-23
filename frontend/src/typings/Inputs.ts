@@ -3,18 +3,24 @@ export type InputChanged<K extends string, T> = {
     value: T;
 };
 
-export interface CheckInputChanged<K extends string>
-    extends InputChanged<K, boolean> {
+export interface CheckInputChanged<K extends string> extends InputChanged<
+    K,
+    boolean
+> {
     shiftKey: boolean;
 }
 
-export interface FileInputChanged<K extends string>
-    extends InputChanged<K, string> {
+export interface FileInputChanged<K extends string> extends InputChanged<
+    K,
+    string
+> {
     files: FileList | null | undefined;
 }
 
-export interface EnhancedSelectInputChanged<K extends string, T>
-    extends InputChanged<K, T> {
+export interface EnhancedSelectInputChanged<
+    K extends string,
+    T,
+> extends InputChanged<K, T> {
     additionalProperties?: unknown;
 }
 

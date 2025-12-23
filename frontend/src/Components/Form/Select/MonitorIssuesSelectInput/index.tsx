@@ -12,15 +12,14 @@ import EnhancedSelectInput, {
 import type { MonitoringScheme } from 'Volume/Volume';
 
 // Types
-export interface MonitorIssuesSelectInputProps<K extends string>
-    extends Omit<
-        EnhancedSelectInputProps<
-            K,
-            EnhancedSelectInputValue<MonitoringScheme>,
-            MonitoringScheme
-        >,
-        'values'
-    > {
+export interface MonitorIssuesSelectInputProps<K extends string> extends Omit<
+    EnhancedSelectInputProps<
+        K,
+        EnhancedSelectInputValue<MonitoringScheme>,
+        MonitoringScheme
+    >,
+    'values'
+> {
     includeNoChange?: boolean;
 }
 

@@ -18,8 +18,10 @@ import MenuItem, { type MenuItemProps } from '../MenuItem';
 import styles from './index.module.css';
 
 // Types
-export interface SelectedMenuItemProps<T>
-    extends Omit<MenuItemProps, 'onPress' | 'name'> {
+export interface SelectedMenuItemProps<T> extends Omit<
+    MenuItemProps,
+    'onPress' | 'name'
+> {
     name?: T;
     children: React.ReactNode;
     selectedIconName?: IconName;
