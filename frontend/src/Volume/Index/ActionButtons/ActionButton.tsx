@@ -10,6 +10,7 @@ import { useMassEditMutation } from 'Store/Api/Command';
 import { useGetVolumesQuery } from 'Store/Api/Volumes';
 
 // Misc
+import getFilteredVolumeIDs from 'Utilities/Volume/getFilteredVolumeIDs';
 import getSelectedIds from 'Utilities/Table/getSelectedIds';
 import translate, { type TranslateKey } from 'Utilities/String/translate';
 
@@ -68,22 +69,7 @@ export default function ActionButton<T extends 'update' | 'search'>({
         }
 
         if (filterKey !== '') {
-            switch (filterKey) {
-                case 'wanted': {
-                    return items
-                        .filter(
-                            (item) =>
-                                item.issuesDownloadedMonitored <
-                                item.issueCountMonitored,
-                        )
-                        .map((item) => item.id);
-                }
-                case 'monitored': {
-                    return items
-                        .filter((item) => item.monitored)
-                        .map((item) => item.id);
-                }
-            }
+            return getFilteredVolumeIDs(items, filterKey).map((m) => m.id);
         }
 
         return items.map((m) => m.id);

@@ -20,6 +20,8 @@ import { setScrollPosition } from 'Store/Slices/App';
 import { useGetVolumesQuery } from 'Store/Api/Volumes';
 
 // Misc
+import getFilteredVolumeIDs from 'Utilities/Volume/getFilteredVolumeIDs';
+
 import { align, icons, kinds, sortDirections } from 'Helpers/Props';
 
 import translate from 'Utilities/String/translate';
@@ -126,43 +128,8 @@ const useIndexVolumes = () => {
         },
     });
 
-    // TODO: implement new ones
     const items = useMemo(() => {
-        switch (filterKey) {
-            case 'monitored':
-                return sortedItems.filter((item) => item.monitored);
-
-            case 'unmonitored':
-                return sortedItems.filter((item) => !item.monitored);
-
-            // TODO: improve logic for continuing and ended
-            case 'continuing':
-                return sortedItems.filter(({ marvelIssueCount, issueCount }) =>
-                    Boolean(
-                        marvelIssueCount === 0
-                            ? 0
-                            : marvelIssueCount - issueCount,
-                    ),
-                );
-
-            case 'ended':
-                return sortedItems.filter(
-                    ({ marvelIssueCount, issueCount }) =>
-                        !(marvelIssueCount === 0
-                            ? 0
-                            : marvelIssueCount - issueCount),
-                );
-
-            case 'wanted':
-                return sortedItems.filter(
-                    (item) =>
-                        item.issuesDownloadedMonitored <
-                        item.issueCountMonitored,
-                );
-
-            default:
-                return sortedItems;
-        }
+        return getFilteredVolumeIDs(sortedItems, filterKey);
     }, [filterKey, sortedItems]);
 
     return {
