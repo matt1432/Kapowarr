@@ -414,7 +414,7 @@ class DownloadHandler(metaclass=Singleton):
             return "lg"
         return None
 
-    def link_in_queue(self, link: str) -> bool:
+    def link_in_queue(self, link: str, web_sub_title: str | None) -> bool:
         """Check if a link is already in the queue.
 
         Args:
@@ -423,7 +423,11 @@ class DownloadHandler(metaclass=Singleton):
         Returns:
             bool: Whether the link is in the queue.
         """
-        return any(link in (d.web_link, d.download_link) for d in self.queue)
+        return any(
+            link in (d.web_link, d.download_link)
+            and web_sub_title == d.web_sub_title
+            for d in self.queue
+        )
 
     def download_for_volume_queued(self, volume_id: int) -> bool:
         """Check whether there is a download in the queue for a given volume.
@@ -472,7 +476,7 @@ class DownloadHandler(metaclass=Singleton):
             + f"{link}"
         )
 
-        if self.link_in_queue(link):
+        if self.link_in_queue(link, result["web_sub_title"]):
             LOGGER.info("Download already in queue")
             return [], None
 
