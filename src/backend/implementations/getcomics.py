@@ -889,7 +889,9 @@ async def search_getcomics(
 
             has_multiple_articles = False
 
-            if isinstance(efd["volume_number"], tuple):
+            if isinstance(efd["volume_number"], tuple) or isinstance(
+                efd["issue_number"], tuple
+            ):
                 gcp = GetComicsPage(article[0])
                 await gcp.load_data()
 
