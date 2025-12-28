@@ -711,6 +711,12 @@ class Volume:
         if key not in key_collection:
             raise KeyNotFound(key)
 
+        # Value can be None
+        if key in ("libgen_series_id", "alt_title"):
+            return value
+        if key in ("marvel_id"):
+            return int(value) if isinstance(value, str) else value
+
         key_data = VolumeData.__dataclass_fields__[key]
         key_type = key_data.type
         if isinstance(key_type, str):
