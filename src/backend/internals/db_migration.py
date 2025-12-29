@@ -484,7 +484,7 @@ def _migrate_unzip_to_format_preference():
             UPDATE config
             SET value = 1
             WHERE key = 'convert';
-            """)
+        """)
     return
 
 
@@ -493,11 +493,11 @@ def _migrate_folder_conversion_to_own_setting():
     cursor = get_db()
     format_preference: list[str] = (
         cursor.execute("""
-        SELECT value
-        FROM config
-        WHERE key = 'format_preference'
-        LIMIT 1;
-    """)
+            SELECT value
+            FROM config
+            WHERE key = 'format_preference'
+            LIMIT 1;
+        """)
         .fetchone()[0]
         .split(",")
     )
@@ -507,13 +507,13 @@ def _migrate_folder_conversion_to_own_setting():
             UPDATE config
             SET value = 1
             WHERE key = 'extract_issue_ranges';
-            """)
+        """)
         format_preference.remove("folder")
         cursor.execute(
             """
-            UPDATE config
-            SET value = ?
-            WHERE key = 'format_preference';
+                UPDATE config
+                SET value = ?
+                WHERE key = 'format_preference';
             """,
             (",".join(format_preference),),
         )
@@ -904,7 +904,7 @@ def _migrate_none_to_string_flare_solverr():
         FROM config
         WHERE key = 'flaresolverr_base_url'
         LIMIT 1;
-        """).fetchone()["value"]
+    """).fetchone()["value"]
 
     if not value:
         cursor.execute("""

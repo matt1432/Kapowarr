@@ -29,16 +29,16 @@ def get_blocklist(offset: int = 0) -> list[BlocklistEntry]:
         get_db()
         .execute(
             """
-        SELECT
-            id, volume_id, issue_id,
-            web_link, web_title, web_sub_title,
-            download_link, source,
-            reason, added_at
-        FROM blocklist
-        ORDER BY id DESC
-        LIMIT 50
-        OFFSET ?;
-        """,
+                SELECT
+                    id, volume_id, issue_id,
+                    web_link, web_title, web_sub_title,
+                    download_link, source,
+                    reason, added_at
+                FROM blocklist
+                ORDER BY id DESC
+                LIMIT 50
+                OFFSET ?;
+            """,
             (offset * 50,),
         )
         .fetchalldict()
@@ -88,15 +88,15 @@ def get_blocklist_entry(id: int) -> BlocklistEntry:
         get_db()
         .execute(
             """
-        SELECT
-            id, volume_id, issue_id,
-            web_link, web_title, web_sub_title,
-            download_link, source,
-            reason, added_at
-        FROM blocklist
-        WHERE id = ?
-        LIMIT 1;
-        """,
+                SELECT
+                    id, volume_id, issue_id,
+                    web_link, web_title, web_sub_title,
+                    download_link, source,
+                    reason, added_at
+                FROM blocklist
+                WHERE id = ?
+                LIMIT 1;
+            """,
             (id,),
         )
         .fetchonedict()
@@ -128,12 +128,12 @@ def blocklist_contains(link: str) -> int | None:
         get_db()
         .execute(
             """
-        SELECT id
-        FROM blocklist
-        WHERE download_link = ?
-            OR (web_link = ? AND download_link IS NULL)
-        LIMIT 1;
-        """,
+                SELECT id
+                FROM blocklist
+                WHERE download_link = ?
+                    OR (web_link = ? AND download_link IS NULL)
+                LIMIT 1;
+            """,
             (link, link),
         )
         .exists()
@@ -203,19 +203,19 @@ def add_to_blocklist(
         get_db()
         .execute(
             """
-        INSERT INTO blocklist(
-            volume_id, issue_id,
-            web_link, web_title, web_sub_title,
-            download_link, source,
-            reason, added_at
-        )
-        VALUES (
-            :volume_id, :issue_id,
-            :web_link, :web_title, :web_sub_title,
-            :download_link, :source,
-            :reason, :added_at
-        );
-        """,
+                INSERT INTO blocklist(
+                    volume_id, issue_id,
+                    web_link, web_title, web_sub_title,
+                    download_link, source,
+                    reason, added_at
+                )
+                VALUES (
+                    :volume_id, :issue_id,
+                    :web_link, :web_title, :web_sub_title,
+                    :download_link, :source,
+                    :reason, :added_at
+                );
+            """,
             {
                 "volume_id": volume_id,
                 "issue_id": issue_id,

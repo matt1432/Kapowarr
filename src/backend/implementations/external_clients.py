@@ -335,16 +335,16 @@ class ExternalClients:
             get_db()
             .execute(
                 """
-            INSERT INTO external_download_clients(
-                download_type, client_type,
-                title, base_url,
-                username, password, api_token
-            ) VALUES (
-                :download_type, :client_type,
-                :title, :base_url,
-                :username, :password, :api_token
-            );
-            """,
+                    INSERT INTO external_download_clients(
+                        download_type, client_type,
+                        title, base_url,
+                        username, password, api_token
+                    ) VALUES (
+                        :download_type, :client_type,
+                        :title, :base_url,
+                        :username, :password, :api_token
+                    );
+                """,
                 data,
             )
             .lastrowid
@@ -361,13 +361,13 @@ class ExternalClients:
         result = (
             get_db()
             .execute("""
-            SELECT
-                id, download_type, client_type,
-                title, base_url,
-                username, password,
-                api_token
-            FROM external_download_clients
-            ORDER BY title, id;
+                SELECT
+                    id, download_type, client_type,
+                    title, base_url,
+                    username, password,
+                    api_token
+                FROM external_download_clients
+                ORDER BY title, id;
             """)
             .fetchalldict()
         )
@@ -390,11 +390,11 @@ class ExternalClients:
             get_db()
             .execute(
                 """
-            SELECT client_type
-            FROM external_download_clients
-            WHERE id = ?
-            LIMIT 1;
-            """,
+                    SELECT client_type
+                    FROM external_download_clients
+                    WHERE id = ?
+                    LIMIT 1;
+                """,
                 (client_id,),
             )
             .exists()
@@ -424,14 +424,14 @@ class ExternalClients:
         cursor = get_db()
         lu_id = cursor.execute(
             """
-            SELECT clients.id
-            FROM download_queue queue
-            INNER JOIN external_download_clients clients
-                ON queue.external_client_id = clients.id
-            WHERE clients.download_type = ?
-            GROUP BY clients.id
-            ORDER BY COUNT(queue.id)
-            LIMIT 1;
+                SELECT clients.id
+                FROM download_queue queue
+                INNER JOIN external_download_clients clients
+                    ON queue.external_client_id = clients.id
+                WHERE clients.download_type = ?
+                GROUP BY clients.id
+                ORDER BY COUNT(queue.id)
+                LIMIT 1;
             """,
             (download_type.value,),
         ).fetchone()
@@ -441,10 +441,10 @@ class ExternalClients:
 
         first_id = cursor.execute(
             """
-            SELECT id
-            FROM external_download_clients
-            WHERE download_type = ?
-            LIMIT 1;
+                SELECT id
+                FROM external_download_clients
+                WHERE download_type = ?
+                LIMIT 1;
             """,
             (download_type.value,),
         ).fetchone()

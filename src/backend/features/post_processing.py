@@ -57,17 +57,17 @@ def add_to_history(download: Download) -> None:
     "Add the download to history in the database"
     get_db().execute(
         """
-        INSERT INTO download_history(
-            web_link, web_title, web_sub_title,
-            file_title,
-            volume_id, issue_id,
-            source, downloaded_at, success
-        ) VALUES (
-            :web_link, :web_title, :web_sub_title,
-            :file_title,
-            :volume_id, :issue_id,
-            :source, :downloaded_at, :success
-        );
+            INSERT INTO download_history(
+                web_link, web_title, web_sub_title,
+                file_title,
+                volume_id, issue_id,
+                source, downloaded_at, success
+            ) VALUES (
+                :web_link, :web_title, :web_sub_title,
+                :file_title,
+                :volume_id, :issue_id,
+                :source, :downloaded_at, :success
+            );
         """,
         {
             "web_link": download.web_link,

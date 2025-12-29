@@ -324,12 +324,12 @@ def setup_db() -> None:
     current_time = round(time())
     cursor.executemany(
         """
-        INSERT INTO task_intervals
-        VALUES (?, ?, ?)
-        ON CONFLICT(task_name) DO
-        UPDATE
-        SET
-            interval = ?;
+            INSERT INTO task_intervals
+            VALUES (?, ?, ?)
+            ON CONFLICT(task_name) DO
+            UPDATE
+            SET
+                interval = ?;
         """,
         ((k, v, current_time, v) for k, v in task_intervals.items()),
     )

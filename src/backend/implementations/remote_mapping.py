@@ -108,11 +108,11 @@ class RemoteMapping:
             get_db()
             .execute(
                 """
-            SELECT 1
-            FROM remote_mappings
-            WHERE id = ?
-            LIMIT 1;
-            """,
+                    SELECT 1
+                    FROM remote_mappings
+                    WHERE id = ?
+                    LIMIT 1;
+                """,
                 (self.id,),
             )
             .fetchonedict()
@@ -134,11 +134,11 @@ class RemoteMapping:
             get_db()
             .execute(
                 """
-            SELECT id, external_download_client_id, remote_path, local_path
-            FROM remote_mappings
-            WHERE id = ?
-            LIMIT 1;
-            """,
+                    SELECT id, external_download_client_id, remote_path, local_path
+                    FROM remote_mappings
+                    WHERE id = ?
+                    LIMIT 1;
+                """,
                 (self.id,),
             )
             .fetchonedict(),
@@ -223,12 +223,12 @@ class RemoteMapping:
         try:
             get_db().execute(
                 """
-                UPDATE remote_mappings
-                SET
-                    external_download_client_id = :external_download_client_id,
-                    remote_path = :remote_path,
-                    local_path = :local_path
-                WHERE id = :id;
+                    UPDATE remote_mappings
+                    SET
+                        external_download_client_id = :external_download_client_id,
+                        remote_path = :remote_path,
+                        local_path = :local_path
+                    WHERE id = :id;
                 """,
                 {**data, "id": self.id},
             )
@@ -301,13 +301,13 @@ class RemoteMappings:
             get_db()
             .execute(
                 """
-            SELECT local_path, remote_path
-            FROM remote_mappings
-            WHERE
-                external_download_client_id = ?
-                AND ? LIKE local_path || '%'
-            LIMIT 1;
-            """,
+                    SELECT local_path, remote_path
+                    FROM remote_mappings
+                    WHERE
+                        external_download_client_id = ?
+                        AND ? LIKE local_path || '%'
+                    LIMIT 1;
+                """,
                 (external_download_client_id, path),
             )
             .fetchone()
@@ -337,13 +337,13 @@ class RemoteMappings:
             get_db()
             .execute(
                 """
-            SELECT remote_path, local_path
-            FROM remote_mappings
-            WHERE
-                external_download_client_id = ?
-                AND ? LIKE remote_path || '%'
-            LIMIT 1;
-            """,
+                    SELECT remote_path, local_path
+                    FROM remote_mappings
+                    WHERE
+                        external_download_client_id = ?
+                        AND ? LIKE remote_path || '%'
+                    LIMIT 1;
+                """,
                 (external_download_client_id, path),
             )
             .fetchone()
@@ -406,14 +406,14 @@ class RemoteMappings:
                 get_db()
                 .execute(
                     """
-                INSERT INTO remote_mappings(
-                    external_download_client_id, remote_path, local_path
-                ) VALUES (
-                    :external_download_client_id,
-                    :remote_path,
-                    :local_path
-                );
-                """,
+                        INSERT INTO remote_mappings(
+                            external_download_client_id, remote_path, local_path
+                        ) VALUES (
+                            :external_download_client_id,
+                            :remote_path,
+                            :local_path
+                        );
+                    """,
                     {
                         "external_download_client_id": external_download_client_id,
                         "remote_path": formatted_remote_path,

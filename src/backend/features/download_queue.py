@@ -316,20 +316,20 @@ class DownloadHandler(metaclass=Singleton):
 
                 download.id = cursor.execute(
                     """
-                    INSERT INTO download_queue(
-                        volume_id, client_type, external_client_id, external_id,
-                        download_link, covered_issues, force_original_name,
-                        source_type, source_name,
-                        web_link, web_title, web_sub_title,
-                        releaser, scan_type, resolution, dpi
-                    )
-                    VALUES (
-                        :volume_id, :client_type, :external_client_id, :external_id,
-                        :download_link, :covered_issues, :force_original_name,
-                        :source_type, :source_name,
-                        :web_link, :web_title, :web_sub_title,
-                        :releaser, :scan_type, :resolution, :dpi
-                    );
+                        INSERT INTO download_queue(
+                            volume_id, client_type, external_client_id, external_id,
+                            download_link, covered_issues, force_original_name,
+                            source_type, source_name,
+                            web_link, web_title, web_sub_title,
+                            releaser, scan_type, resolution, dpi
+                        )
+                        VALUES (
+                            :volume_id, :client_type, :external_client_id, :external_id,
+                            :download_link, :covered_issues, :force_original_name,
+                            :source_type, :source_name,
+                            :web_link, :web_title, :web_sub_title,
+                            :releaser, :scan_type, :resolution, :dpi
+                        );
                     """,
                     {
                         "volume_id": download.volume_id,
@@ -893,7 +893,7 @@ def get_download_history(
             ORDER BY downloaded_at DESC
             LIMIT 50
             OFFSET :offset;
-            """
+        """
 
     elif volume_id is not None:
         comm = """
@@ -907,7 +907,7 @@ def get_download_history(
             ORDER BY downloaded_at DESC
             LIMIT 50
             OFFSET :offset;
-            """
+        """
 
     else:
         comm = """
@@ -920,7 +920,7 @@ def get_download_history(
             ORDER BY downloaded_at DESC
             LIMIT 50
             OFFSET :offset;
-            """
+        """
 
     return (
         get_db()
@@ -946,7 +946,7 @@ def get_download_history_total_records(
                 COUNT(*) as count
             FROM download_history
             WHERE issue_id = :issue_id
-            """
+        """
 
     elif volume_id is not None:
         comm = """
@@ -954,14 +954,14 @@ def get_download_history_total_records(
                 COUNT(*) as count
             FROM download_history
             WHERE volume_id = :volume_id
-            """
+        """
 
     else:
         comm = """
             SELECT
                 COUNT(*) as count
             FROM download_history
-            """
+        """
 
     entry = (
         get_db()

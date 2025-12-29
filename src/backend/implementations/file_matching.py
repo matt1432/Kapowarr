@@ -165,11 +165,11 @@ def scan_files(
         tuple(b)
         for b in cursor.execute(
             """
-            SELECT if.file_id, if.issue_id
-            FROM issues_files if
-            INNER JOIN issues i
-            ON if.issue_id = i.id
-            WHERE i.volume_id = ?;
+                SELECT if.file_id, if.issue_id
+                FROM issues_files if
+                INNER JOIN issues i
+                ON if.issue_id = i.id
+                WHERE i.volume_id = ?;
             """,
             (volume_id,),
         )
@@ -248,9 +248,9 @@ def scan_files(
     # Add bindings for general files that aren't in current bindings
     cursor.executemany(
         """
-        INSERT OR IGNORE INTO volume_files(
-            file_id, file_type, volume_id
-        ) VALUES (?, ?, ?);
+            INSERT OR IGNORE INTO volume_files(
+                file_id, file_type, volume_id
+            ) VALUES (?, ?, ?);
         """,
         ((b[0], b[1], volume_id) for b in general_bindings),
     )

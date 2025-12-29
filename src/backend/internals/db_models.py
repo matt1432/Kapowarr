@@ -26,15 +26,15 @@ class FilesDB:
         if volume_id:
             cursor.execute(
                 """
-                SELECT DISTINCT f.id, filepath, size, releaser, scan_type, resolution, dpi, notes
-                FROM files f
-                INNER JOIN issues_files if
-                INNER JOIN issues i
-                ON
-                    f.id = if.file_id
-                    AND if.issue_id = i.id
-                WHERE volume_id = ?
-                ORDER BY filepath;
+                    SELECT DISTINCT f.id, filepath, size, releaser, scan_type, resolution, dpi, notes
+                    FROM files f
+                    INNER JOIN issues_files if
+                    INNER JOIN issues i
+                    ON
+                        f.id = if.file_id
+                        AND if.issue_id = i.id
+                    WHERE volume_id = ?
+                    ORDER BY filepath;
                 """,
                 (volume_id,),
             )
@@ -42,12 +42,12 @@ class FilesDB:
         elif issue_id:
             cursor.execute(
                 """
-                SELECT DISTINCT f.id, filepath, size, releaser, scan_type, resolution, dpi, notes
-                FROM files f
-                INNER JOIN issues_files if
-                ON f.id = if.file_id
-                WHERE if.issue_id = ?
-                ORDER BY filepath;
+                    SELECT DISTINCT f.id, filepath, size, releaser, scan_type, resolution, dpi, notes
+                    FROM files f
+                    INNER JOIN issues_files if
+                    ON f.id = if.file_id
+                    WHERE if.issue_id = ?
+                    ORDER BY filepath;
                 """,
                 (issue_id,),
             )
@@ -55,10 +55,10 @@ class FilesDB:
         elif file_id:
             cursor.execute(
                 """
-                SELECT id, filepath, size, releaser, scan_type, resolution, dpi, notes
-                FROM files f
-                WHERE f.id = ?
-                LIMIT 1;
+                    SELECT id, filepath, size, releaser, scan_type, resolution, dpi, notes
+                    FROM files f
+                    WHERE f.id = ?
+                    LIMIT 1;
                 """,
                 (file_id,),
             )
@@ -66,10 +66,10 @@ class FilesDB:
         elif filepath:
             cursor.execute(
                 """
-                SELECT id, filepath, size, releaser, scan_type, resolution, dpi, notes
-                FROM files f
-                WHERE f.filepath = ?
-                LIMIT 1;
+                    SELECT id, filepath, size, releaser, scan_type, resolution, dpi, notes
+                    FROM files f
+                    WHERE f.filepath = ?
+                    LIMIT 1;
                 """,
                 (filepath,),
             )
@@ -79,7 +79,7 @@ class FilesDB:
                 SELECT id, filepath, size, releaser, scan_type, resolution, dpi, notes
                 FROM files
                 ORDER BY filepath;
-                """)
+            """)
 
         result: list = cursor.fetchalldict()
 
@@ -94,17 +94,17 @@ class FilesDB:
             get_db()
             .execute(
                 """
-            SELECT i.volume_id
-            FROM
-                files f
-                INNER JOIN issues_files if
-                INNER JOIN issues i
-            ON
-                f.id = if.file_id
-                AND if.issue_id = i.id
-            WHERE f.filepath = ?
-            LIMIT 1;
-            """,
+                    SELECT i.volume_id
+                    FROM
+                        files f
+                        INNER JOIN issues_files if
+                        INNER JOIN issues i
+                    ON
+                        f.id = if.file_id
+                        AND if.issue_id = i.id
+                    WHERE f.filepath = ?
+                    LIMIT 1;
+                """,
                 (filepath,),
             )
             .fetchone()
@@ -115,15 +115,15 @@ class FilesDB:
                 get_db()
                 .execute(
                     """
-                SELECT vf.volume_id
-                FROM
-                    files f
-                    INNER JOIN volume_files vf
-                ON
-                    f.id = vf.file_id
-                WHERE f.filepath = ?
-                LIMIT 1;
-                """,
+                        SELECT vf.volume_id
+                        FROM
+                            files f
+                            INNER JOIN volume_files vf
+                        ON
+                            f.id = vf.file_id
+                        WHERE f.filepath = ?
+                        LIMIT 1;
+                    """,
                     (filepath,),
                 )
                 .fetchone()
@@ -138,17 +138,17 @@ class FilesDB:
         return first_of_subarrays(
             get_db().execute(
                 """
-            SELECT DISTINCT
-                i.calculated_issue_number
-            FROM issues i
-            INNER JOIN issues_files if
-            INNER JOIN files f
-            ON
-                i.id = if.issue_id
-                AND if.file_id = f.id
-            WHERE f.filepath = ?
-            ORDER BY calculated_issue_number;
-            """,
+                    SELECT DISTINCT
+                        i.calculated_issue_number
+                    FROM issues i
+                    INNER JOIN issues_files if
+                    INNER JOIN files f
+                    ON
+                        i.id = if.issue_id
+                        AND if.file_id = f.id
+                    WHERE f.filepath = ?
+                    ORDER BY calculated_issue_number;
+                """,
                 (filepath,),
             )
         )
@@ -254,18 +254,18 @@ class FilesDB:
     def delete_linked_files(volume_id: int) -> None:
         get_db().execute(
             """
-            DELETE FROM files
-            WHERE id IN (
-                SELECT DISTINCT file_id
-                FROM issues_files
-                INNER JOIN issues
-                ON issues_files.issue_id = issues.id
-                WHERE volume_id = ?
-            ) OR id IN (
-                SELECT DISTINCT file_id
-                FROM volume_files
-                WHERE volume_id = ?
-            );
+                DELETE FROM files
+                WHERE id IN (
+                    SELECT DISTINCT file_id
+                    FROM issues_files
+                    INNER JOIN issues
+                    ON issues_files.issue_id = issues.id
+                    WHERE volume_id = ?
+                ) OR id IN (
+                    SELECT DISTINCT file_id
+                    FROM volume_files
+                    WHERE volume_id = ?
+                );
             """,
             (volume_id, volume_id),
         )
@@ -275,12 +275,12 @@ class FilesDB:
     def delete_issue_linked_files(issue_id: int) -> None:
         get_db().execute(
             """
-            DELETE FROM files
-            WHERE id in (
-                SELECT DISTINCT file_id
-                FROM issues_files
-                WHERE issue_id = ?
-            );
+                DELETE FROM files
+                WHERE id in (
+                    SELECT DISTINCT file_id
+                    FROM issues_files
+                    WHERE issue_id = ?
+                );
             """,
             (issue_id,),
         )
@@ -297,7 +297,7 @@ class FilesDB:
             )
             DELETE FROM files
             WHERE id NOT IN ids;
-            """)
+        """)
         return
 
 
@@ -308,12 +308,12 @@ class GeneralFilesDB:
             get_db()
             .execute(
                 """
-            SELECT f.id, filepath, size, file_type, releaser, scan_type, resolution, dpi, notes
-            FROM files f
-            INNER JOIN volume_files vf
-            ON f.id = vf.file_id
-            WHERE volume_id = ?;
-            """,
+                    SELECT f.id, filepath, size, file_type, releaser, scan_type, resolution, dpi, notes
+                    FROM files f
+                    INNER JOIN volume_files vf
+                    ON f.id = vf.file_id
+                    WHERE volume_id = ?;
+                """,
                 (volume_id,),
             )
             .fetchalldict()
@@ -325,12 +325,12 @@ class GeneralFilesDB:
     def delete_linked_files(volume_id: int) -> None:
         get_db().execute(
             """
-            DELETE FROM files
-            WHERE id IN (
-                SELECT DISTINCT file_id
-                FROM volume_files
-                WHERE volume_id = ?
-            );
+                DELETE FROM files
+                WHERE id IN (
+                    SELECT DISTINCT file_id
+                    FROM volume_files
+                    WHERE volume_id = ?
+                );
             """,
             (volume_id,),
         )

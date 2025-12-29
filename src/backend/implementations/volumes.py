@@ -152,12 +152,12 @@ class Issue:
             get_db()
             .execute(
                 """
-            SELECT id
-            FROM issues
-            WHERE volume_id = ?
-                AND calculated_issue_number = ?
-            LIMIT 1;
-            """,
+                    SELECT id
+                    FROM issues
+                    WHERE volume_id = ?
+                        AND calculated_issue_number = ?
+                    LIMIT 1;
+                """,
                 (volume_id, calculated_issue_number),
             )
             .exists()
@@ -178,15 +178,15 @@ class Issue:
             get_db()
             .execute(
                 """
-            SELECT
-                id, volume_id, comicvine_id,
-                issue_number, calculated_issue_number,
-                title, date, description,
-                monitored
-            FROM issues
-            WHERE id = ?
-            LIMIT 1;
-            """,
+                    SELECT
+                        id, volume_id, comicvine_id,
+                        issue_number, calculated_issue_number,
+                        title, date, description,
+                        monitored
+                    FROM issues
+                    WHERE id = ?
+                    LIMIT 1;
+                """,
                 (self.id,),
             )
             .fetchonedict()
@@ -337,19 +337,19 @@ class Volume:
             get_db()
             .execute(
                 """
-            SELECT
-                id, comicvine_id, libgen_series_id, marvel_id,
-                title, alt_title,
-                year, publisher, volume_number,
-                description, site_url,
-                monitored, monitor_new_issues,
-                root_folder, folder, custom_folder,
-                special_version, special_version_locked,
-                last_cv_fetch
-            FROM volumes
-            WHERE id = ?
-            LIMIT 1;
-            """,
+                    SELECT
+                        id, comicvine_id, libgen_series_id, marvel_id,
+                        title, alt_title,
+                        year, publisher, volume_number,
+                        description, site_url,
+                        monitored, monitor_new_issues,
+                        root_folder, folder, custom_folder,
+                        special_version, special_version_locked,
+                        last_cv_fetch
+                    FROM volumes
+                    WHERE id = ?
+                    LIMIT 1;
+                """,
                 (self.id,),
             )
             .fetchonedict()
@@ -370,44 +370,44 @@ class Volume:
             get_db()
             .execute(
                 """
-            SELECT
-                v.id, comicvine_id, libgen_series_id, marvel_id,
-                title, year, publisher,
-                volume_number,
-                special_version, special_version_locked,
-                description, site_url,
-                monitored, monitor_new_issues,
-                v.folder, root_folder,
-                rf.folder AS root_folder_path,
-                (
-                    SELECT COUNT(*)
-                    FROM issues
-                    WHERE volume_id = v.id
-                ) AS issue_count,
-                (
-                    SELECT COUNT(DISTINCT issue_id)
-                    FROM issues i
-                    INNER JOIN issues_files if
-                    ON i.id = if.issue_id
-                    WHERE volume_id = v.id
-                ) AS issues_downloaded,
-                (
-                    SELECT SUM(size) FROM (
-                        SELECT DISTINCT f.id, size
-                        FROM issues i
-                        INNER JOIN issues_files if
-                        INNER JOIN files f
-                        ON i.id = if.issue_id
-                            AND if.file_id = f.id
-                        WHERE volume_id = v.id
-                    )
-                ) AS total_size
-            FROM volumes v
-            INNER JOIN root_folders rf
-            ON v.root_folder = rf.id
-            WHERE v.id = ?
-            LIMIT 1;
-            """,
+                    SELECT
+                        v.id, comicvine_id, libgen_series_id, marvel_id,
+                        title, year, publisher,
+                        volume_number,
+                        special_version, special_version_locked,
+                        description, site_url,
+                        monitored, monitor_new_issues,
+                        v.folder, root_folder,
+                        rf.folder AS root_folder_path,
+                        (
+                            SELECT COUNT(*)
+                            FROM issues
+                            WHERE volume_id = v.id
+                        ) AS issue_count,
+                        (
+                            SELECT COUNT(DISTINCT issue_id)
+                            FROM issues i
+                            INNER JOIN issues_files if
+                            ON i.id = if.issue_id
+                            WHERE volume_id = v.id
+                        ) AS issues_downloaded,
+                        (
+                            SELECT SUM(size) FROM (
+                                SELECT DISTINCT f.id, size
+                                FROM issues i
+                                INNER JOIN issues_files if
+                                INNER JOIN files f
+                                ON i.id = if.issue_id
+                                    AND if.file_id = f.id
+                                WHERE volume_id = v.id
+                            )
+                        ) AS total_size
+                    FROM volumes v
+                    INNER JOIN root_folders rf
+                    ON v.root_folder = rf.id
+                    WHERE v.id = ?
+                    LIMIT 1;
+                """,
                 (self.id,),
             )
             .fetchonedict()
@@ -460,10 +460,10 @@ class Volume:
             get_db()
             .execute(
                 """
-            SELECT MAX(date) AS last_issue_date
-            FROM issues
-            WHERE volume_id = ?;
-            """,
+                    SELECT MAX(date) AS last_issue_date
+                    FROM issues
+                    WHERE volume_id = ?;
+                """,
                 (self.id,),
             )
             .exists()
@@ -478,18 +478,18 @@ class Volume:
         cursor = get_db()
         marvel_issues = cursor.execute(
             """
-            SELECT
-                id,
-                marvel_id,
-                volume_id,
-                title,
-                link,
-                date,
-                description,
-                issue_number
-            FROM marvel_issues
-            WHERE volume_id = ?
-            ORDER BY date, issue_number
+                SELECT
+                    id,
+                    marvel_id,
+                    volume_id,
+                    title,
+                    link,
+                    date,
+                    description,
+                    issue_number
+                FROM marvel_issues
+                WHERE volume_id = ?
+                ORDER BY date, issue_number
             """,
             (self.id,),
         ).fetchalldict()
@@ -545,14 +545,14 @@ class Volume:
         cursor = get_db()
         issues = cursor.execute(
             """
-            SELECT
-                id, volume_id, comicvine_id,
-                issue_number, calculated_issue_number,
-                title, date, description,
-                monitored
-            FROM issues
-            WHERE volume_id = ?
-            ORDER BY date, calculated_issue_number
+                SELECT
+                    id, volume_id, comicvine_id,
+                    issue_number, calculated_issue_number,
+                    title, date, description,
+                    monitored
+                FROM issues
+                WHERE volume_id = ?
+                ORDER BY date, calculated_issue_number
             """,
             (self.id,),
         ).fetchalldict()
@@ -561,14 +561,14 @@ class Volume:
         if not _skip_files:
             cursor.execute(
                 """
-                SELECT i.id AS issue_id, f.id AS file_id, filepath, size, releaser, scan_type, resolution, dpi, notes
-                FROM files f
-                INNER JOIN issues_files if
-                    ON f.id = if.file_id
-                INNER JOIN issues i
-                    ON if.issue_id = i.id
-                WHERE i.volume_id = ?
-                ORDER BY filepath;
+                    SELECT i.id AS issue_id, f.id AS file_id, filepath, size, releaser, scan_type, resolution, dpi, notes
+                    FROM files f
+                    INNER JOIN issues_files if
+                        ON f.id = if.file_id
+                    INNER JOIN issues i
+                        ON if.issue_id = i.id
+                    WHERE i.volume_id = ?
+                    ORDER BY filepath;
                 """,
                 (self.id,),
             )
@@ -645,15 +645,15 @@ class Volume:
             get_db()
             .execute(
                 """
-            SELECT i.id, i.calculated_issue_number
-            FROM issues i
-            LEFT JOIN issues_files if
-            ON i.id = if.issue_id
-            WHERE
-                file_id IS NULL
-                AND volume_id = ?
-                AND monitored = 1;
-            """,
+                    SELECT i.id, i.calculated_issue_number
+                    FROM issues i
+                    LEFT JOIN issues_files if
+                    ON i.id = if.issue_id
+                    WHERE
+                        file_id IS NULL
+                        AND volume_id = ?
+                        AND monitored = 1;
+                """,
                 (self.id,),
             )
             .fetchall()
@@ -787,9 +787,9 @@ class Volume:
         """
         get_db().execute(
             """
-            UPDATE volumes_covers
-            SET cover = ?
-            WHERE volume_id = ?;
+                UPDATE volumes_covers
+                SET cover = ?
+                WHERE volume_id = ?;
             """,
             (cover, self.id),
         )
@@ -806,9 +806,9 @@ class Volume:
         if monitoring_scheme == MonitorScheme.NONE:
             cursor.execute(
                 """
-                UPDATE issues
-                SET monitored = 0
-                WHERE volume_id = ?;
+                    UPDATE issues
+                    SET monitored = 0
+                    WHERE volume_id = ?;
                 """,
                 (self.id,),
             )
@@ -816,19 +816,19 @@ class Volume:
         elif monitoring_scheme == MonitorScheme.MISSING:
             cursor.execute(
                 """
-                WITH missing_issues AS (
-                    SELECT id
-                    FROM issues i
-                    LEFT JOIN issues_files if
-                    ON i.id = if.issue_id
-                    WHERE volume_id = ?
-                        AND if.issue_id IS NULL
-                )
-                UPDATE issues
-                SET monitored = 0
-                WHERE
-                    volume_id = ?
-                    AND id NOT IN missing_issues;
+                    WITH missing_issues AS (
+                        SELECT id
+                        FROM issues i
+                        LEFT JOIN issues_files if
+                        ON i.id = if.issue_id
+                        WHERE volume_id = ?
+                            AND if.issue_id IS NULL
+                    )
+                    UPDATE issues
+                    SET monitored = 0
+                    WHERE
+                        volume_id = ?
+                        AND id NOT IN missing_issues;
                 """,
                 (self.id, self.id),
             )
@@ -836,9 +836,9 @@ class Volume:
         elif monitoring_scheme == MonitorScheme.ALL:
             cursor.execute(
                 """
-                UPDATE issues
-                SET monitored = 1
-                WHERE volume_id = ?;
+                    UPDATE issues
+                    SET monitored = 1
+                    WHERE volume_id = ?;
                 """,
                 (self.id,),
             )
@@ -1078,56 +1078,56 @@ class Library:
         volumes = (
             get_db()
             .execute(f"""
-            WITH
-                vol_issues AS (
-                    SELECT id, monitored, date
-                    FROM issues
-                    WHERE volume_id = volumes.id
-                ),
-                vol_marvel_issues AS (
-                    SELECT id
-                    FROM marvel_issues
-                    WHERE volume_id = volumes.id
-                ),
-                issues_to_files AS (
-                    SELECT issue_id, monitored, f.id, size
-                    FROM issues i
-                    INNER JOIN issues_files if
-                    INNER JOIN files f
-                    ON i.id = if.issue_id
-                        AND if.file_id = f.id
-                    WHERE volume_id = volumes.id
-                )
-            SELECT
-                id, comicvine_id,
-                title, year, publisher,
-                volume_number, description,
-                monitored, monitor_new_issues,
-                folder,
-                (
-                    SELECT COUNT(size) FROM (SELECT size FROM issues_to_files)
-                ) AS issue_file_count,
-                (
-                    SELECT COUNT(id) FROM vol_issues
-                ) AS issue_count,
-                (
-                    SELECT COUNT(id) FROM vol_marvel_issues
-                ) AS marvel_issue_count,
-                (
-                    SELECT COUNT(id) FROM vol_issues WHERE monitored = 1
-                ) AS issue_count_monitored,
-                (
-                    SELECT COUNT(DISTINCT issue_id) FROM issues_to_files
-                ) AS issues_downloaded,
-                (
-                    SELECT COUNT(DISTINCT issue_id) FROM issues_to_files WHERE monitored = 1
-                ) AS issues_downloaded_monitored,
-                (
-                    SELECT SUM(size) FROM (SELECT DISTINCT id, size FROM issues_to_files)
-                ) AS total_size
-            FROM volumes
-            {sql_filter}
-            ORDER BY {sort.value};
+                WITH
+                    vol_issues AS (
+                        SELECT id, monitored, date
+                        FROM issues
+                        WHERE volume_id = volumes.id
+                    ),
+                    vol_marvel_issues AS (
+                        SELECT id
+                        FROM marvel_issues
+                        WHERE volume_id = volumes.id
+                    ),
+                    issues_to_files AS (
+                        SELECT issue_id, monitored, f.id, size
+                        FROM issues i
+                        INNER JOIN issues_files if
+                        INNER JOIN files f
+                        ON i.id = if.issue_id
+                            AND if.file_id = f.id
+                        WHERE volume_id = volumes.id
+                    )
+                SELECT
+                    id, comicvine_id,
+                    title, year, publisher,
+                    volume_number, description,
+                    monitored, monitor_new_issues,
+                    folder,
+                    (
+                        SELECT COUNT(size) FROM (SELECT size FROM issues_to_files)
+                    ) AS issue_file_count,
+                    (
+                        SELECT COUNT(id) FROM vol_issues
+                    ) AS issue_count,
+                    (
+                        SELECT COUNT(id) FROM vol_marvel_issues
+                    ) AS marvel_issue_count,
+                    (
+                        SELECT COUNT(id) FROM vol_issues WHERE monitored = 1
+                    ) AS issue_count_monitored,
+                    (
+                        SELECT COUNT(DISTINCT issue_id) FROM issues_to_files
+                    ) AS issues_downloaded,
+                    (
+                        SELECT COUNT(DISTINCT issue_id) FROM issues_to_files WHERE monitored = 1
+                    ) AS issues_downloaded_monitored,
+                    (
+                        SELECT SUM(size) FROM (SELECT DISTINCT id, size FROM issues_to_files)
+                    ) AS total_size
+                FROM volumes
+                {sql_filter}
+                ORDER BY {sort.value};
             """)
             .fetchalldict()
         )
@@ -1183,21 +1183,21 @@ class Library:
         result = (
             get_db()
             .execute("""
-            WITH v AS (
-                SELECT COUNT(*) AS volumes,
-                    SUM(monitored) AS monitored
-                FROM volumes
-            )
-            SELECT
-                v.volumes,
-                v.monitored,
-                v.volumes - v.monitored AS unmonitored,
-                (SELECT COUNT(*) FROM issues) AS issues,
-                (SELECT COUNT(DISTINCT issue_id) FROM issues_files) AS downloaded_issues,
-                (SELECT COUNT(*) FROM files) AS files,
-                (SELECT IFNULL(SUM(size), 0) FROM files) AS total_file_size
-            FROM v;
-        """)
+                WITH v AS (
+                    SELECT COUNT(*) AS volumes,
+                        SUM(monitored) AS monitored
+                    FROM volumes
+                )
+                SELECT
+                    v.volumes,
+                    v.monitored,
+                    v.volumes - v.monitored AS unmonitored,
+                    (SELECT COUNT(*) FROM issues) AS issues,
+                    (SELECT COUNT(DISTINCT issue_id) FROM issues_files) AS downloaded_issues,
+                    (SELECT COUNT(*) FROM files) AS files,
+                    (SELECT IFNULL(SUM(size), 0) FROM files) AS total_file_size
+                FROM v;
+            """)
             .fetchonedict()
             or {}
         )
@@ -1337,29 +1337,29 @@ class Library:
         with cursor:
             volume_id = cursor.execute(
                 """
-                INSERT INTO volumes(
-                    comicvine_id,
-                    title,
-                    alt_title,
-                    year,
-                    publisher,
-                    volume_number,
-                    description,
-                    site_url,
-                    monitored,
-                    monitor_new_issues,
-                    root_folder,
-                    custom_folder,
-                    last_cv_fetch,
-                    special_version,
-                    special_version_locked
-                ) VALUES (
-                    :comicvine_id, :title, :alt_title,
-                    :year, :publisher, :volume_number, :description,
-                    :site_url, :monitored, :monitor_new_issues,
-                    :root_folder, :custom_folder,
-                    :last_cv_fetch, :special_version, :special_version_locked
-                );
+                    INSERT INTO volumes(
+                        comicvine_id,
+                        title,
+                        alt_title,
+                        year,
+                        publisher,
+                        volume_number,
+                        description,
+                        site_url,
+                        monitored,
+                        monitor_new_issues,
+                        root_folder,
+                        custom_folder,
+                        last_cv_fetch,
+                        special_version,
+                        special_version_locked
+                    ) VALUES (
+                        :comicvine_id, :title, :alt_title,
+                        :year, :publisher, :volume_number, :description,
+                        :site_url, :monitored, :monitor_new_issues,
+                        :root_folder, :custom_folder,
+                        :last_cv_fetch, :special_version, :special_version_locked
+                    );
                 """,
                 {
                     "comicvine_id": vd["comicvine_id"],
@@ -1382,29 +1382,29 @@ class Library:
 
             cursor.execute(
                 """
-                INSERT INTO volumes_covers(volume_id, cover)
-                VALUES (:volume_id, :cover);
+                    INSERT INTO volumes_covers(volume_id, cover)
+                    VALUES (:volume_id, :cover);
                 """,
                 {"volume_id": volume_id, "cover": vd["cover"]},
             )
 
             cursor.executemany(
                 """
-                INSERT INTO issues(
-                    volume_id,
-                    comicvine_id,
-                    issue_number,
-                    calculated_issue_number,
-                    title,
-                    date,
-                    description,
-                    monitored
-                ) VALUES (
-                    :volume_id, :comicvine_id,
-                    :issue_number, :calculated_issue_number,
-                    :title, :date, :description,
-                    :monitored
-                );
+                    INSERT INTO issues(
+                        volume_id,
+                        comicvine_id,
+                        issue_number,
+                        calculated_issue_number,
+                        title,
+                        date,
+                        description,
+                        monitored
+                    ) VALUES (
+                        :volume_id, :comicvine_id,
+                        :issue_number, :calculated_issue_number,
+                        :title, :date, :description,
+                        :monitored
+                    );
                 """,
                 (
                     {
@@ -1591,10 +1591,10 @@ def refresh_and_scan(
     if volume_id:
         cursor.execute(
             """
-            SELECT comicvine_id, id, last_cv_fetch, marvel_id, special_version
-            FROM volumes
-            WHERE id = ?
-            LIMIT 1;
+                SELECT comicvine_id, id, last_cv_fetch, marvel_id, special_version
+                FROM volumes
+                WHERE id = ?
+                LIMIT 1;
             """,
             (volume_id,),
         )
@@ -1602,10 +1602,10 @@ def refresh_and_scan(
     else:
         cursor.execute(
             """
-            SELECT comicvine_id, id, last_cv_fetch, marvel_id, special_version
-            FROM volumes
-            WHERE last_cv_fetch <= ?
-            ORDER BY last_cv_fetch ASC;
+                SELECT comicvine_id, id, last_cv_fetch, marvel_id, special_version
+                FROM volumes
+                WHERE last_cv_fetch <= ?
+                ORDER BY last_cv_fetch ASC;
             """,
             (
                 one_day_ago.timestamp()
@@ -1651,12 +1651,12 @@ def refresh_and_scan(
         cv_id_to_issue_count: dict[int, int] = dict(
             cursor.execute(
                 """
-                SELECT v.comicvine_id, COUNT(i.id)
-                FROM volumes v
-                LEFT JOIN issues i
-                ON v.id = i.volume_id
-                WHERE v.last_cv_fetch <= ?
-                GROUP BY i.volume_id;
+                    SELECT v.comicvine_id, COUNT(i.id)
+                    FROM volumes v
+                    LEFT JOIN issues i
+                    ON v.id = i.volume_id
+                    WHERE v.last_cv_fetch <= ?
+                    GROUP BY i.volume_id;
                 """,
                 (one_day_ago.timestamp(),),
             )
@@ -1673,17 +1673,17 @@ def refresh_and_scan(
 
     cursor.executemany(
         """
-        UPDATE volumes
-        SET
-            title = :title,
-            alt_title = :alt_title,
-            year = :year,
-            publisher = :publisher,
-            volume_number = :volume_number,
-            description = :description,
-            site_url = :site_url,
-            last_cv_fetch = :last_cv_fetch
-        WHERE id = :id;
+            UPDATE volumes
+            SET
+                title = :title,
+                alt_title = :alt_title,
+                year = :year,
+                publisher = :publisher,
+                volume_number = :volume_number,
+                description = :description,
+                site_url = :site_url,
+                last_cv_fetch = :last_cv_fetch
+            WHERE id = :id;
         """,
         (
             {
@@ -1703,10 +1703,10 @@ def refresh_and_scan(
 
     cursor.executemany(
         """
-        UPDATE volumes_covers
-        SET
-            cover = :cover
-        WHERE volume_id = :volume_id;
+            UPDATE volumes_covers
+            SET
+                cover = :cover
+            WHERE volume_id = :volume_id;
         """,
         (
             {
@@ -1720,31 +1720,31 @@ def refresh_and_scan(
     # Update Marvel Issues
     cursor.executemany(
         """
-        INSERT INTO marvel_issues(
-            marvel_id,
-            volume_id,
-            title,
-            link,
-            date,
-            description,
-            issue_number
-        ) VALUES (
-            :marvel_id,
-            :volume_id,
-            :title,
-            :link,
-            :date,
-            :description,
-            :issue_number
-        )
-        ON CONFLICT(marvel_id) DO
-        UPDATE
-        SET
-            title = :title,
-            link = :link,
-            date = :date,
-            description = :description,
-            issue_number = :issue_number;
+            INSERT INTO marvel_issues(
+                marvel_id,
+                volume_id,
+                title,
+                link,
+                date,
+                description,
+                issue_number
+            ) VALUES (
+                :marvel_id,
+                :volume_id,
+                :title,
+                :link,
+                :date,
+                :description,
+                :issue_number
+            )
+            ON CONFLICT(marvel_id) DO
+            UPDATE
+            SET
+                title = :title,
+                link = :link,
+                date = :date,
+                description = :description,
+                issue_number = :issue_number;
         """,
         (
             {
@@ -1781,27 +1781,27 @@ def refresh_and_scan(
     )
     cursor.executemany(
         """
-        INSERT INTO issues(
-            volume_id,
-            comicvine_id,
-            issue_number,
-            calculated_issue_number,
-            title,
-            date,
-            description,
-            monitored
-        ) VALUES (
-            :volume_id, :comicvine_id, :issue_number, :calculated_issue_number,
-            :title, :date, :description, :monitored
-        )
-        ON CONFLICT(comicvine_id) DO
-        UPDATE
-        SET
-            issue_number = :issue_number,
-            calculated_issue_number = :calculated_issue_number,
-            title = :title,
-            date = :date,
-            description = :description;
+            INSERT INTO issues(
+                volume_id,
+                comicvine_id,
+                issue_number,
+                calculated_issue_number,
+                title,
+                date,
+                description,
+                monitored
+            ) VALUES (
+                :volume_id, :comicvine_id, :issue_number, :calculated_issue_number,
+                :title, :date, :description, :monitored
+            )
+            ON CONFLICT(comicvine_id) DO
+            UPDATE
+            SET
+                issue_number = :issue_number,
+                calculated_issue_number = :calculated_issue_number,
+                title = :title,
+                date = :date,
+                description = :description;
         """,
         (
             {
@@ -1843,12 +1843,12 @@ def refresh_and_scan(
         issue_cv_to_id = dict(
             cursor.execute(
                 """
-            SELECT i.comicvine_id, i.id
-            FROM issues i
-            INNER JOIN volumes v
-            ON i.volume_id = v.id
-            WHERE v.comicvine_id = ?;
-            """,
+                    SELECT i.comicvine_id, i.id
+                    FROM issues i
+                    INNER JOIN volumes v
+                    ON i.volume_id = v.id
+                    WHERE v.comicvine_id = ?;
+                """,
                 (vd["comicvine_id"],),
             ).fetchall()
         )
@@ -1870,9 +1870,9 @@ def refresh_and_scan(
     )
     cursor.executemany(
         """
-        UPDATE volumes
-        SET special_version = :special_version
-        WHERE id = :id AND special_version_locked = 0;
+            UPDATE volumes
+            SET special_version = :special_version
+            WHERE id = :id AND special_version_locked = 0;
         """,
         updated_special_versions,
     )
@@ -1938,22 +1938,22 @@ def delete_issue_file(file_id: int) -> None:
     not_downloaded_issues: list[int] = first_of_subarrays(
         cursor.execute(
             """
-        WITH matched_file_counts AS (
-            SELECT
-                issue_id,
-                COUNT(file_id) AS matched_file_count
-            FROM issues_files
-            WHERE issue_id IN (
+                WITH matched_file_counts AS (
+                    SELECT
+                        issue_id,
+                        COUNT(file_id) AS matched_file_count
+                    FROM issues_files
+                    WHERE issue_id IN (
+                        SELECT issue_id
+                        FROM issues_files
+                        WHERE file_id = ?
+                    )
+                    GROUP BY issue_id
+                )
                 SELECT issue_id
-                FROM issues_files
-                WHERE file_id = ?
-            )
-            GROUP BY issue_id
-        )
-        SELECT issue_id
-        FROM matched_file_counts
-        WHERE matched_file_count = 1;
-        """,
+                FROM matched_file_counts
+                WHERE matched_file_count = 1;
+            """,
             (file_id,),
         )
     )

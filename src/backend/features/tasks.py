@@ -787,13 +787,13 @@ def get_task_history(offset: int = 0) -> list[dict]:
         get_db()
         .execute(
             """
-        SELECT
-            task_name, display_title, run_at
-        FROM task_history
-        ORDER BY run_at DESC
-        LIMIT 50
-        OFFSET ?;
-        """,
+                SELECT
+                    task_name, display_title, run_at
+                FROM task_history
+                ORDER BY run_at DESC
+                LIMIT 50
+                OFFSET ?;
+            """,
             (offset * 50,),
         )
         .fetchalldict()
@@ -818,18 +818,18 @@ def get_task_planning() -> list[dict]:
         get_db()
         .execute(
             """
-        SELECT
-            i.task_name, interval, next_run, run_at AS last_run
-        FROM task_intervals i
-        INNER JOIN (
-            SELECT
-                task_name,
-                MAX(run_at) AS run_at
-            FROM task_history
-            GROUP BY task_name
-        ) h
-        ON i.task_name = h.task_name;
-        """
+                SELECT
+                    i.task_name, interval, next_run, run_at AS last_run
+                FROM task_intervals i
+                INNER JOIN (
+                    SELECT
+                        task_name,
+                        MAX(run_at) AS run_at
+                    FROM task_history
+                    GROUP BY task_name
+                ) h
+                ON i.task_name = h.task_name;
+            """
         )
         .fetchalldict()
     )

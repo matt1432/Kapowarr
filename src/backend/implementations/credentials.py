@@ -54,14 +54,14 @@ class Credentials:
             get_db()
             .execute(
                 """
-            SELECT
-                id, source,
-                username, email,
-                password, api_key
-            FROM credentials
-            WHERE id = ?
-            LIMIT 1;
-            """,
+                    SELECT
+                        id, source,
+                        username, email,
+                        password, api_key
+                    FROM credentials
+                    WHERE id = ?
+                    LIMIT 1;
+                """,
                 (id,),
             )
             .fetchone()
@@ -139,9 +139,9 @@ class Credentials:
             get_db()
             .execute(
                 """
-            INSERT INTO credentials(source, username, email, password, api_key)
-            VALUES (:source, :username, :email, :password, :api_key);
-            """,
+                    INSERT INTO credentials(source, username, email, password, api_key)
+                    VALUES (:source, :username, :email, :password, :api_key);
+                """,
                 credential_data.todict(),
             )
             .lastrowid
