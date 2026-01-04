@@ -17,11 +17,11 @@ license-files = ["LICENSE"]
 requires-python = ">= 3.13"
 dependencies = [
   "aiohttp ~= 3.13.2",
-  "beautifulsoup4 ~= 4.13.4",
+  "beautifulsoup4 ~= 4.14.3",
   "bencoding ~= 0.2.6",
   "cryptography ~= 46.0.1",
   "flask ~= 3.1",
-  "flask-socketio ~= 5.5.1",
+  "flask-socketio ~= 5.6.0",
   "libgencomics @ git+https://github.com/matt1432/LibgenComics.git@v1.2.2",
   "Pillow",
   "requests ~= 2.32.3",
