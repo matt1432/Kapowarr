@@ -626,9 +626,11 @@ class ApiResponse(TypedDict):
 
 
 class ThumbnailData(TypedDict):
-    filepath: str
-    filename: str
+    folder_name: str
+    full_path: str
     prefix: str
+    current_filename: str
+    new_filename: str
 
 
 class FileExtraInfo(TypedDict):

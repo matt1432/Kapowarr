@@ -8,6 +8,8 @@ import snakeify from 'Utilities/Object/snakeify';
 import camelize from 'Utilities/Object/camelize';
 
 // Types
+import type { CamelCasedPropertiesDeep } from 'type-fest';
+
 import type { IssueData, RawIssueData } from 'Issue/Issue';
 
 export interface ToggleIssueParams {
@@ -24,14 +26,18 @@ export interface UpdateIssueParams {
 }
 
 export interface RawThumbnailData {
-    filepath: string;
-    filename: string;
+    folder_name: string;
+    full_path: string;
     prefix: string;
+    current_filename: string;
+    new_filename: string;
 }
 
-export type ThumbnailData = RawThumbnailData & {
-    src: string;
-};
+export type ThumbnailData = CamelCasedPropertiesDeep<
+    RawThumbnailData & {
+        src: string;
+    }
+>;
 
 // IMPLEMENTATIONS
 
@@ -64,25 +70,27 @@ const extendedApi = baseApi.injectEndpoints({
             }),
 
             transformResponse: (response: { result: RawThumbnailData[] }) =>
-                response.result.map(({ filepath, ...rest }) => ({
-                    src: `${window.Kapowarr.urlBase}/api/thumbnail?api_key=${window.Kapowarr.apiKey}&filepath=${filepath.replaceAll('&', '%26')}`,
-                    filepath,
-                    ...rest,
-                })),
+                response.result.map(({ full_path, ...rest }) =>
+                    camelize({
+                        src: `${window.Kapowarr.urlBase}/api/thumbnail?api_key=${window.Kapowarr.apiKey}&filepath=${full_path.replaceAll('&', '%26')}`,
+                        full_path,
+                        ...rest,
+                    }),
+                ),
         }),
 
         // POST
         updateBookPages: build.mutation<
             void,
-            { fileId: number; newPages: RawThumbnailData[] }
+            { fileId: number; newPages: ThumbnailData[] }
         >({
-            query: ({ fileId, newPages: body }) => ({
+            query: ({ fileId, newPages }) => ({
                 method: 'POST',
                 url: `files/${fileId}`,
                 params: {
                     apiKey: window.Kapowarr.apiKey,
                 },
-                body,
+                body: snakeify(newPages),
             }),
         }),
 

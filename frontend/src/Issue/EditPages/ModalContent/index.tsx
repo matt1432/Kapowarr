@@ -18,7 +18,6 @@ import { useUpdateBookPagesMutation } from 'Store/Api/Issues';
 // Misc
 import { icons } from 'Helpers/Props';
 
-import filterObject from 'Utilities/Object/filterObject';
 import translate from 'Utilities/String/translate';
 
 // General Components
@@ -38,7 +37,7 @@ import VirtualTable from 'Components/Table/VirtualTable';
 import styles from './index.module.css';
 
 // Types
-import type { RawThumbnailData, ThumbnailData } from 'Store/Api/Issues';
+import type { ThumbnailData } from 'Store/Api/Issues';
 import type { InputChanged } from 'typings/Inputs';
 
 interface RowProps {
@@ -87,19 +86,19 @@ function swapThumbnailPositions([first, secnd]: [
 ]): [ThumbnailData, ThumbnailData] {
     const prefix = first.prefix;
 
-    let newFirstFilename = secnd.filename;
-    let newSecndFilename = first.filename;
+    let newFirstFilename = secnd.newFilename;
+    let newSecndFilename = first.newFilename;
 
-    const firstNumbers = parsePageNumbers(first.filename, prefix);
-    const secndNumbers = parsePageNumbers(secnd.filename, prefix);
+    const firstNumbers = parsePageNumbers(first.newFilename, prefix);
+    const secndNumbers = parsePageNumbers(secnd.newFilename, prefix);
 
     if (typeof firstNumbers === 'string' && typeof secndNumbers !== 'string') {
         const separator = secndNumbers[2];
-        newFirstFilename = first.filename.replace(
+        newFirstFilename = first.newFilename.replace(
             firstNumbers,
             secndNumbers[1],
         );
-        newSecndFilename = secnd.filename.replace(
+        newSecndFilename = secnd.newFilename.replace(
             `${secndNumbers[0]}${separator}${secndNumbers[1]}`,
             `${firstNumbers}${separator}${secndNumbers[0]}`,
         );
@@ -109,11 +108,11 @@ function swapThumbnailPositions([first, secnd]: [
         typeof secndNumbers === 'string'
     ) {
         const separator = firstNumbers[2];
-        newFirstFilename = first.filename.replace(
+        newFirstFilename = first.newFilename.replace(
             `${firstNumbers[0]}${separator}${firstNumbers[1]}`,
             `${firstNumbers[1]}${separator}${secndNumbers}`,
         );
-        newSecndFilename = secnd.filename.replace(
+        newSecndFilename = secnd.newFilename.replace(
             secndNumbers,
             firstNumbers[0],
         );
@@ -122,11 +121,11 @@ function swapThumbnailPositions([first, secnd]: [
     return [
         {
             ...secnd,
-            filename: newSecndFilename,
+            newFilename: newSecndFilename,
         },
         {
             ...first,
-            filename: newFirstFilename,
+            newFilename: newFirstFilename,
         },
     ];
 }
@@ -140,7 +139,7 @@ function Row({
     handlePressDelete,
     handleEditFilename,
 }: RowComponentProps<RowProps>) {
-    const { src, filename } = thumbnails[index];
+    const { src, newFilename } = thumbnails[index];
 
     const isLast = index === thumbnails.length - 1;
 
@@ -183,7 +182,7 @@ function Row({
             <div className={styles.inputContainer}>
                 <TextInput
                     name="filename"
-                    value={filename}
+                    value={newFilename}
                     onChange={handleEditFilename(index)}
                 />
             </div>
@@ -225,7 +224,7 @@ export default function EditPagesModalContent({
         setPrevThumbnails(thumbnails);
         setChanges(
             thumbnails?.toSorted((a, b) =>
-                a.filename.localeCompare(b.filename),
+                a.newFilename.localeCompare(b.newFilename),
             ),
         );
     }
@@ -238,22 +237,19 @@ export default function EditPagesModalContent({
             changes &&
             JSON.stringify(
                 thumbnails?.toSorted((a, b) =>
-                    a.filename.localeCompare(b.filename),
+                    a.newFilename.localeCompare(b.newFilename),
                 ),
             ) !== JSON.stringify(changes),
         [changes, thumbnails],
     );
 
     const handleSavePress = useCallback(() => {
+        if (!changes) {
+            return;
+        }
         updateBookPages({
             fileId,
-            newPages: changes!.map(
-                (change) =>
-                    filterObject(
-                        change,
-                        ([key]) => key !== 'src',
-                    ) as RawThumbnailData,
-            ),
+            newPages: changes,
         });
     }, [changes, fileId, updateBookPages]);
 
@@ -333,7 +329,7 @@ export default function EditPagesModalContent({
 
                 newThumbnails[index] = {
                     ...newThumbnails[index],
-                    filename: value,
+                    newFilename: value,
                 };
             },
         [changes],

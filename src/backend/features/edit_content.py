@@ -149,13 +149,16 @@ def _get_thumbnails_data(thumbnails: list[str]) -> list[ThumbnailData]:
 
     filenames = [basename(thumbnail) for thumbnail in thumbnails]
     prefix = get_files_prefix(filenames)
+    folder_name = dirname(thumbnails[0]) if len(thumbnails) != 0 else ""
 
     for thumbnail, filename in zip(thumbnails, filenames):
         thumbnails_data.append(
             ThumbnailData(
-                filepath=thumbnail,
-                filename=filename,
+                folder_name=folder_name,
+                full_path=thumbnail,
                 prefix=prefix,
+                current_filename=filename,
+                new_filename=filename,
             )
         )
 
@@ -215,15 +218,15 @@ def update_issue_pages(file_id: int, new_pages: list[ThumbnailData]) -> None:
                 zip.write(filename=join(archive_folder, f), arcname=f)
 
             for page in new_pages:
-                if basename(f) == basename(page["filepath"]):
+                if basename(f) == page["current_filename"]:
                     zip.write(
                         filename=join(archive_folder, f),
-                        arcname=join(dirname(f), page["filename"]),
+                        arcname=join(page["folder_name"], page["new_filename"]),
                     )
                     break
 
     delete_file_folder(archive_folder)
-    delete_file_folder(dirname(new_pages[0]["filepath"]))
+    delete_file_folder(new_pages[0]["folder_name"])
 
     if is_rar:
         cbz_to_cbr(file)
