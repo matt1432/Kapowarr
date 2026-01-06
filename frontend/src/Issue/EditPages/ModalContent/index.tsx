@@ -331,6 +331,8 @@ export default function EditPagesModalContent({
                     ...newThumbnails[index],
                     newFilename: value,
                 };
+
+                setChanges(newThumbnails);
             },
         [changes],
     );
