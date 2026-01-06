@@ -13,7 +13,11 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 export default defineConfig(
     { ignores: ['dist'] },
     {
-        extends: [js.configs.recommended, ...tseslint.configs.recommended],
+        extends: [
+            js.configs.recommended,
+            ...tseslint.configs.recommended,
+            reactHooks.configs.flat.recommended,
+        ],
 
         files: ['**/*.{ts,tsx}'],
 
@@ -22,13 +26,9 @@ export default defineConfig(
             globals: globals.browser,
         },
 
-        plugins: {
-            'react-hooks': reactHooks,
-            'react-refresh': reactRefresh,
-        },
+        plugins: { 'react-refresh': reactRefresh },
 
         rules: {
-            ...reactHooks.configs.recommended.rules,
             'react-refresh/only-export-components': [
                 'warn',
                 { allowConstantExport: true },
