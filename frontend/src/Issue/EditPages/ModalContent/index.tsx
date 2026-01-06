@@ -44,6 +44,7 @@ interface RowProps {
     thumbnails: ThumbnailData[];
     handlePressUp: (index: number) => () => void;
     handlePressDown: (index: number) => () => void;
+    handlePressBump: (index: number) => () => void;
     handlePressDelete: (index: number) => () => void;
     handleEditFilename: (
         index: number,
@@ -76,6 +77,10 @@ function parsePageNumbers(
     }
 
     const parsedNumbers = strippedName.split(separator);
+
+    if (parsedNumbers[1] === '') {
+        return strippedName;
+    }
 
     return [parsedNumbers[0], parsedNumbers[1], separator];
 }
@@ -130,12 +135,50 @@ function swapThumbnailPositions([first, secnd]: [
     ];
 }
 
+function _bumpNumber(num: string): string {
+    const string_value = /(\d+)/.exec(num)?.[0];
+    if (!string_value) {
+        return '';
+    }
+    const value = parseFloat(string_value) + 1;
+    const new_string_value = `${Array.from({ length: string_value.length - value.toString().length }, () => '0').join('')}${value.toString()}`;
+    return num.replace(string_value, new_string_value);
+}
+
+function bumpThumbnailNumber(thumbnail: ThumbnailData): ThumbnailData {
+    const prefix = thumbnail.prefix;
+
+    let newFilename = thumbnail.newFilename;
+
+    const numbers = parsePageNumbers(thumbnail.newFilename, prefix);
+
+    if (typeof numbers === 'string') {
+        newFilename = thumbnail.newFilename.replace(
+            numbers,
+            _bumpNumber(numbers),
+        );
+    }
+    else {
+        const separator = numbers[2];
+        newFilename = thumbnail.newFilename.replace(
+            `${numbers[0]}${separator}${numbers[1]}`,
+            `${_bumpNumber(numbers[0])}${separator}${_bumpNumber(numbers[1])}`,
+        );
+    }
+
+    return {
+        ...thumbnail,
+        newFilename,
+    };
+}
+
 function Row({
     index,
     style,
     thumbnails,
     handlePressUp,
     handlePressDown,
+    handlePressBump,
     handlePressDelete,
     handleEditFilename,
 }: RowComponentProps<RowProps>) {
@@ -174,6 +217,13 @@ function Row({
                     <IconButton
                         name={icons.ARROW_DOWN}
                         onPress={handlePressDown(index)}
+                        isDisabled={isLast}
+                    />
+
+                    <IconButton
+                        name={icons.ADD}
+                        title="Bump this and all following pages' numbers by one"
+                        onPress={handlePressBump(index)}
                         isDisabled={isLast}
                     />
                 </div>
@@ -295,6 +345,23 @@ export default function EditPagesModalContent({
         [changes],
     );
 
+    const handlePressBump = useCallback(
+        (index: number) => () => {
+            if (!changes) {
+                return;
+            }
+
+            const newThumbnails = [...changes];
+
+            for (let i = index; i !== changes.length; i++) {
+                newThumbnails[i] = bumpThumbnailNumber(newThumbnails[i]);
+            }
+
+            setChanges(newThumbnails);
+        },
+        [changes],
+    );
+
     const handlePressDelete = useCallback(
         (index: number) => () => {
             if (!changes) {
@@ -363,6 +430,7 @@ export default function EditPagesModalContent({
                             thumbnails: changes,
                             handlePressUp,
                             handlePressDown,
+                            handlePressBump,
                             handlePressDelete,
                             handleEditFilename,
                         }}
