@@ -65,7 +65,7 @@ const extendedApi = baseApi.injectEndpoints({
 
             transformResponse: (response: { result: RawThumbnailData[] }) =>
                 response.result.map(({ filepath, ...rest }) => ({
-                    src: `${window.Kapowarr.urlBase}/api/thumbnail?api_key=${window.Kapowarr.apiKey}&filepath=${filepath}`,
+                    src: `${window.Kapowarr.urlBase}/api/thumbnail?api_key=${window.Kapowarr.apiKey}&filepath=${filepath.replaceAll('&', '%26')}`,
                     filepath,
                     ...rest,
                 })),
